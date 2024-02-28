@@ -1,5 +1,7 @@
 from pynwb import NWBHDF5IO
 
+
+
 # 指定要读取的NWB文件路径
 file_path = 'D:\GitHub_programe\GitHub\Learn-how-to-use-git\Code_test\dynamic_table_example.nwb'
 
