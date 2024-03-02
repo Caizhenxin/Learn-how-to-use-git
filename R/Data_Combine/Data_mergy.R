@@ -6,7 +6,7 @@ df1 <- read.csv("人口学变量表.csv")
 df2 <- read.csv("焦虑自评l量表SAI.csv")
 df3 <- read.csv("体育运动量表(1).csv")
 df4 <- read.csv("抑郁自评量表SDS.csv")
-df5 <- read.csv("匹兹堡睡眠质量量表.csv")
+df5 <- read.csv("PSQI_scores.csv")
 
 # 将五个数据框按照'id'列进行左连接（left join）合并
 merged_df <- df1 %>%
@@ -19,4 +19,4 @@ merged_df <- df1 %>%
 merged_df[is.na(merged_df)] <- "NA"
 
 # 将合并后的数据框写入CSV文件
-write.csv(merged_df, "merged_data1.csv", row.names = FALSE)
+write.csv(merged_df, "merged_data.csv", row.names = FALSE)
