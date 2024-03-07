@@ -1,13 +1,13 @@
 ---
-title: "PSQI_Data_Clean"
+  title: "PSQI_Data_Clean"
 author: "czx"
-date: "睡眠.csv"
+date: "匹兹堡睡眠质量量表.csv"
 output: html_document
 ---
-
-#预处理问卷星文件  更新中~~
-
-```{r}
+  
+  #预处理问卷星文件  更新中~~
+  
+  ```{r}
 # # 读取CSV文件
 # data <- read.csv("your_file.csv")
 # 
@@ -28,7 +28,7 @@ output: html_document
 
 ```{r}
 # 读取 CSV 文件并将所有列转换为数值类型
-psqi_data <- read.csv("睡眠.csv", header = TRUE, colClasses = "numeric", na.strings = c("", "00"))
+psqi_data <- read.csv("匹兹堡睡眠质量量表.csv", header = TRUE, colClasses = "numeric", na.strings = c("", "00"))
 psqi_data[is.na(psqi_data)] <- 0
 
 # 确认所有列都已转换为数值类型
@@ -157,46 +157,46 @@ rm(sleep_duration_score,calculate_sleep_duration_score)
 #计算  床上时间=起床时间（条目3）—上床时间（条目1）
 
 # 调整小时为24小时制
-    psqi_data$t1_h <- ifelse(psqi_data$t1_h < 6, psqi_data$t1_h, ifelse(psqi_data$t1_h <= 12, psqi_data$t1_h + 12, psqi_data$t1_h))
-    
-    # 如果小时为24或者12，则将其视为第二天的零点
-    psqi_data$t1_h[psqi_data$t1_h == 24] <- 0
-    psqi_data$t1_h[psqi_data$t1_h == 12] <- 0
-    
-    # 将第二列和第三列合并为上床时间
-    psqi_data$bedtime <- as.POSIXct(paste(psqi_data$t1_h, psqi_data$t1_min, sep = ":"), format = "%H:%M")
-    
-    # 将第五列和第六列合并为起床时间
-    psqi_data$wakeup_time <- as.POSIXct(paste(psqi_data$t3_h, psqi_data$t3_min, sep = ":"), format = "%H:%M")
-    
-    # 调整wakeup_time为第二天的时间
-    psqi_data$wakeup_time[psqi_data$t3_h < psqi_data$t1_h] <- psqi_data$wakeup_time[psqi_data$t3_h < psqi_data$t1_h] + 86400  # 加上一天的秒数
-    
-    # 计算时间差（单位：小时）  ##床上时间
-    psqi_data$bedtime_score <- as.numeric(difftime(psqi_data$wakeup_time, psqi_data$bedtime, units = "hours"))
-    
-    # 计算睡眠效率
-    sleep_efficiency <- (as.numeric(psqi_data$sleep_time) / as.numeric(psqi_data$bedtime_score)) * 100
-    
-    # 计算成分IV得分
-    calculate_IV_score <- function(sleep_efficiency) {
-      if (sleep_efficiency > 85) {
-        return(0)
-      } else if (sleep_efficiency >= 75 && sleep_efficiency <= 84) {
-        return(1)
-      } else if (sleep_efficiency >= 65 && sleep_efficiency <= 74) {
-        return(2)
-      } else {
-        return(3)
-      }
-    }
-    
-    # 应用函数计算成分IV得分
-    IV_score <- sapply(sleep_efficiency, calculate_IV_score)
-    
-    # 将得分添加到数据框中
-    psqi_data$IV_score <- IV_score    
-    rm(IV_score,sleep_duration,sleep_efficiency,calculate_IV_score)
+psqi_data$t1_h <- ifelse(psqi_data$t1_h < 6, psqi_data$t1_h, ifelse(psqi_data$t1_h <= 12, psqi_data$t1_h + 12, psqi_data$t1_h))
+
+# 如果小时为24或者12，则将其视为第二天的零点
+psqi_data$t1_h[psqi_data$t1_h == 24] <- 0
+psqi_data$t1_h[psqi_data$t1_h == 12] <- 0
+
+# 将第二列和第三列合并为上床时间
+psqi_data$bedtime <- as.POSIXct(paste(psqi_data$t1_h, psqi_data$t1_min, sep = ":"), format = "%H:%M")
+
+# 将第五列和第六列合并为起床时间
+psqi_data$wakeup_time <- as.POSIXct(paste(psqi_data$t3_h, psqi_data$t3_min, sep = ":"), format = "%H:%M")
+
+# 调整wakeup_time为第二天的时间
+psqi_data$wakeup_time[psqi_data$t3_h < psqi_data$t1_h] <- psqi_data$wakeup_time[psqi_data$t3_h < psqi_data$t1_h] + 86400  # 加上一天的秒数
+
+# 计算时间差（单位：小时）  ##床上时间
+psqi_data$bedtime_score <- as.numeric(difftime(psqi_data$wakeup_time, psqi_data$bedtime, units = "hours"))
+
+# 计算睡眠效率
+sleep_efficiency <- (as.numeric(psqi_data$sleep_time) / as.numeric(psqi_data$bedtime_score)) * 100
+
+# 计算成分IV得分
+calculate_IV_score <- function(sleep_efficiency) {
+  if (sleep_efficiency > 85) {
+    return(0)
+  } else if (sleep_efficiency >= 75 && sleep_efficiency <= 84) {
+    return(1)
+  } else if (sleep_efficiency >= 65 && sleep_efficiency <= 74) {
+    return(2)
+  } else {
+    return(3)
+  }
+}
+
+# 应用函数计算成分IV得分
+IV_score <- sapply(sleep_efficiency, calculate_IV_score)
+
+# 将得分添加到数据框中
+psqi_data$IV_score <- IV_score    
+rm(IV_score,sleep_duration,sleep_efficiency,calculate_IV_score)
 
 ```
 
@@ -310,8 +310,8 @@ psqi_scores$PSQI_total <- rowSums(psqi_scores[, -1], na.rm = TRUE)  # 不计算i
 
 # 输出为新的CSV文件
 write.csv(psqi_scores, file = "PSQI_scores.csv", row.names = FALSE)
-
 write.csv(psqi_data, file = "PSQI_scores_raw.csv", row.names = FALSE)
+
 # rm(psqi_data,psqi_scores)
 ```
 

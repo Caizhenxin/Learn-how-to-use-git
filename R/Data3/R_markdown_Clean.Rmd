@@ -1,7 +1,7 @@
 ---
 title: "PSQI_Data_Clean"
 author: "czx"
-date: "睡眠.csv"
+date: "大学生问卷数据.csv"
 output: html_document
 ---
 
@@ -28,7 +28,7 @@ output: html_document
 
 ```{r}
 # 读取 CSV 文件并将所有列转换为数值类型
-psqi_data <- read.csv("睡眠.csv", header = TRUE, colClasses = "numeric", na.strings = c("", "00"))
+psqi_data <- read.csv("大学生问卷数据.csv", header = TRUE, colClasses = "numeric", na.strings = c("", "00"))
 psqi_data[is.na(psqi_data)] <- 0
 
 # 确认所有列都已转换为数值类型
@@ -155,10 +155,9 @@ rm(sleep_duration_score,calculate_sleep_duration_score)
 
 ```{r}
 #计算  床上时间=起床时间（条目3）—上床时间（条目1）
-
 # 调整小时为24小时制
     psqi_data$t1_h <- ifelse(psqi_data$t1_h < 6, psqi_data$t1_h, ifelse(psqi_data$t1_h <= 12, psqi_data$t1_h + 12, psqi_data$t1_h))
-    
+
     # 如果小时为24或者12，则将其视为第二天的零点
     psqi_data$t1_h[psqi_data$t1_h == 24] <- 0
     psqi_data$t1_h[psqi_data$t1_h == 12] <- 0
@@ -297,6 +296,10 @@ rm(daytime_dysfunction_8,daytime_dysfunction_9,daytime_dysfunction_score,calcula
 
 ```
 
+```{r}
+write.csv(psqi_data, file = "PSQI_scores_raw.csv", row.names = FALSE)
+```
+
 ##整理，计算总分
 
 ```{r}
@@ -311,7 +314,8 @@ psqi_scores$PSQI_total <- rowSums(psqi_scores[, -1], na.rm = TRUE)  # 不计算i
 # 输出为新的CSV文件
 write.csv(psqi_scores, file = "PSQI_scores.csv", row.names = FALSE)
 
-write.csv(psqi_data, file = "PSQI_scores_raw.csv", row.names = FALSE)
+
+
 # rm(psqi_data,psqi_scores)
 ```
 
