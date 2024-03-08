@@ -7,8 +7,53 @@ output: html_document
 
 
 ```{r}
-# 定义函数来打印树形结构
-print_tree <- function(path, indent="") {
+# 定义函数来写入树形结构到文件
+write_tree_to_file <- function(path, output_file, indent="") {
+  # 获取当前目录的内容
+  content <- list.files(path)
+  
+  # 写入当前目录名称到文件
+  cat(paste(indent, "└─ ", basename(path), "\n", sep=""), file=output_file)
+  
+  # 遍历当前目录的内容
+  for (item in content) {
+    # 构建完整路径
+    full_path <- file.path(path, item)
+    
+    # 写入缩进和当前项目到文件
+    cat(paste(indent, "    │", sep=""), file=output_file)
+    cat(paste("   ", item, "\n", sep=""), file=output_file)
+    
+    # 如果是目录，则递归调用该函数
+    if (file.info(full_path)$isdir) {
+      write_tree_to_file(full_path, output_file, paste(indent, "    ", sep=""))
+    }
+  }
+}
+
+# 指定目录路径
+directory_path <- "D:/GitHub_programe/GitHub/SPE_Database/4_Data_Extraction/4_2_Open_Data"
+
+# 指定输出文件路径
+output_file <- "tree_structure.txt"
+
+# 打开文件
+file_conn <- file(output_file, "w")
+
+# 写入树形结构到文件
+write_tree_to_file(directory_path, file_conn)
+
+# 关闭文件连接
+close(file_conn)
+
+# 提示用户文件已写入完成
+cat("树形结构已写入文件：", output_file, "\n")
+
+```
+
+```{r}
+# 定义函数来递归查找并写入CSV文件
+write_csv_files_to_tree <- function(path, output_file, indent="") {
   # 获取当前目录的内容
   content <- list.files(path)
   
@@ -17,12 +62,13 @@ print_tree <- function(path, indent="") {
     # 构建完整路径
     full_path <- file.path(path, item)
     
-    # 打印缩进和当前项目
-    cat(indent, "└─ ", item, "\n", sep="")
-    
     # 如果是目录，则递归调用该函数
     if (file.info(full_path)$isdir) {
-      print_tree(full_path, paste(indent, "│   ", sep=""))
+      write_csv_files_to_tree(full_path, output_file, indent)
+    } else if (tools::file_ext(item) == "csv") {
+      # 如果是CSV文件，则写入到文本文件中
+      cat(paste(indent, "│   ", sep=""), file=output_file, append=TRUE)
+      cat(paste("├─ ", item, "\n", sep=""), file=output_file, append=TRUE)
     }
   }
 }
@@ -30,8 +76,331 @@ print_tree <- function(path, indent="") {
 # 指定目录路径
 directory_path <- "D:/GitHub_programe/GitHub/SPE_Database/4_Data_Extraction/4_2_Open_Data"
 
-# 打印树形结构
-print_tree(directory_path)
+# 指定输出文件路径
+output_file <- "csv_files_tree_structure.txt"
+
+# 打开文件
+file_conn <- file(output_file, "w")
+
+# 写入CSV文件树形结构到文件
+write_csv_files_to_tree(directory_path, file_conn)
+
+# 关闭文件连接
+close(file_conn)
+
+# 提示用户文件已写入完成
+cat("CSV文件树形结构已写入文件：", output_file, "\n")
+
+```
+
+
+```{r}
+# 安装必要的包（如果尚未安装）
+# install.packages("tidyverse")
+# install.packages("writexl")
+
+# 加载所需的库
+library(tidyverse)
+library(writexl)
+
+# 设置工作目录
+setwd("D:/GitHub_programe/GitHub/SPE_Database/4_Data_Extraction/4_2_Open_Data")  # 请替换为您的文件夹路径
+
+# 获取所有CSV文件的文件名
+csv_files <- list.files(pattern = "\\.csv$", recursive = TRUE, full.names = TRUE)
+
+# 循环读取每个CSV文件并生成相应的代码簿
+for (file in csv_files) {
+  # 读取CSV文件
+  df <- read_csv(file)
+  
+  # 提取变量名
+  variable_names <- names(df)
+  
+  # 创建一个空的数据框来存储代码簿信息
+  codebook <- data.frame(
+    Variable_Name = character(),
+    Variable_description = character(),
+    Variable_value = character(),
+    Variable_category = character(),
+    stringsAsFactors = FALSE
+  )
+  
+  # 提取变量值和种类
+  for (var_name in variable_names) {
+    # 提取变量值的种类
+    variable_values <- unique(df[[var_name]])
+    
+    # 构建数据框来存储变量值和种类
+    temp_df <- data.frame(
+      Variable_Name = var_name,
+      Variable_description = "",  # 可以根据需要添加变量描述
+      Variable_value = as.character(variable_values),
+      Variable_category = "",  # 可以根据需要添加变量类别
+      stringsAsFactors = FALSE
+    )
+    
+    # 将临时数据框添加到代码簿中
+    codebook <- bind_rows(codebook, temp_df)
+  }
+  
+  # 生成文件名
+  output_file <- gsub("\\.csv$", "_Codebook.xlsx", basename(file))
+  
+  # 将代码簿写入Excel文件
+  write_xlsx(codebook, output_file)
+}
+
+```
+
+#v1
+
+```{r}
+# 安装必要的包（如果尚未安装）v1
+# install.packages("tidyverse")
+# install.packages("writexl")
+
+# 加载所需的库
+library(tidyverse)
+library(writexl)
+
+# 设置工作目录
+setwd("D:/GitHub_programe/GitHub/SPE_Database/4_Data_Extraction/4_2_Open_Data")  # 请替换为您的文件夹路径
+
+# 获取所有CSV文件的文件名
+csv_files <- list.files(pattern = "\\.csv$", recursive = TRUE, full.names = TRUE)
+
+# 循环读取每个CSV文件并生成相应的代码簿
+for (file in csv_files) {
+  # 读取CSV文件
+  df <- read_csv(file)
+  
+  # 提取变量名
+  variable_names <- names(df)
+  
+  # 创建一个空的数据框来存储代码簿信息
+  codebook <- data.frame(
+    Variable_Name = character(),
+    Variable_description = character(),
+    Variable_value = character(),
+    Variable_category = character(),
+    stringsAsFactors = FALSE
+  )
+  
+  # 逐个变量生成代码簿信息
+  for (var_name in variable_names) {
+    # 提取变量值的种类
+    variable_values <- unique(df[[var_name]])
+    
+    # 确定变量描述、可能的值和类别
+    variable_description <- switch(
+      var_name,
+      Subject = "the number of subjects",
+      Session = "the number of session",
+      Age = "the age of subject",
+      Clock.StartTimeOfDay = "start time of the experiment",
+      Group = "experimental group of the participant",
+      Handedness = "The subject's handedness",
+      Sex = "the gender of subject",
+      SubTrial = "The stage of the experiment, whether it is a practice stage or a formal experiment",
+      BlockList.Sample = "The block number of the reward experiment, NA means practices or other tasks",
+      BlockListE.Sample = "The block number of the emotion experiment, NA means practices or other tasks",
+      BlockListS.Sample = "The block number of the matching experiment, NA means practices or other tasks",
+      Match = "whether the label matches the shape or not",
+      ShapeE = "The social meaning represented by shape",
+      Label = "The social meaning represented by label",
+      CorrectAnswer = "The correct response of the current trial",
+      Target.ACC = "The accuracy of the current trial the reward task",
+      Target.RESP = "The key pressed by the participants at the current trial in the reward task",
+      Target.RT = "Reaction time at the current trial in the reward task",
+      TargetE.ACC = "The accuracy of the current trial the emotion task",
+      TargetE.RESP = "The key pressed by the participants at the current trial in the emotion task",
+      TargetE.RT = "Reaction time at the current trial in the emotion task",
+      TargetS.ACC = "The accuracy of the current trial the matching task",
+      TargetS.RESP = "The key pressed by the participants at the current trial in the matching task",
+      TargetS.RT = "Reaction time at the current trial in the matching task",
+      "NA"
+    )
+    
+    variable_category <- switch(
+      var_name,
+      Subject = "categorical",
+      Session = "numeric",
+      Age = "numeric",
+      Clock.StartTimeOfDay = "categorical",
+      Group = "numeric",
+      Handedness = "categorical",
+      Sex = "categorical",
+      SubTrial = "numeric",
+      BlockList.Sample = "numeric",
+      BlockListE.Sample = "numeric",
+      BlockListS.Sample = "numeric",
+      Match = "categorical",
+      ShapeE = "categorical",
+      Label = "categorical",
+      CorrectAnswer = "numeric",
+      Target.ACC = "numeric",
+      Target.RESP = "numeric",
+      Target.RT = "numeric",
+      TargetE.ACC = "numeric",
+      TargetE.RESP = "numeric",
+      TargetE.RT = "numeric",
+      TargetS.ACC = "numeric",
+      TargetS.RESP = "numeric",
+      TargetS.RT = "numeric",
+      "NA"
+    )
+    
+    # 构建数据框来存储变量值和种类
+    temp_df <- data.frame(
+      Variable_Name = var_name,
+      Variable_description = variable_description,
+      Variable_value = as.character(variable_values),
+      Variable_category = variable_category,
+      stringsAsFactors = FALSE
+    )
+    
+    # 将临时数据框添加到代码簿中
+    codebook <- bind_rows(codebook, temp_df)
+  }
+  
+  # 生成文件名
+  output_file <- gsub("\\.csv$", "_Codebook.xlsx", basename(file))
+  
+  # 设置输出路径
+  output_path <- file.path("D:/GitHub_programe/GitHub/Learn-how-to-use-git/Code_test/Database_test", output_file)
+  
+  # 将代码簿写入Excel文件
+  write_xlsx(codebook, output_path)
+}
+
+```
+
+#v2
+
+```{r}
+# 安装必要的包（如果尚未安装）
+# install.packages("tidyverse")
+# install.packages("writexl")
+
+# 加载所需的库
+library(tidyverse)
+library(writexl)
+
+# 设置工作目录
+setwd("D:/GitHub_programe/GitHub/SPE_Database/4_Data_Extraction/4_2_Open_Data")  # 请替换为您的文件夹路径
+
+# 获取所有CSV文件的文件名
+csv_files <- list.files(pattern = "\\.csv$", recursive = TRUE, full.names = TRUE)
+
+# 循环读取每个CSV文件并生成相应的代码簿
+for (file in csv_files) {
+  # 读取CSV文件
+  df <- read_csv(file)
+  
+  # 提取变量名
+  variable_names <- names(df)
+  
+  # 创建一个空的数据框来存储代码簿信息
+  codebook <- data.frame(
+    Variable_Name = character(),
+    Variable_description = character(),
+    Variable_value = character(),
+    Variable_category = character(),
+    stringsAsFactors = FALSE
+  )
+  
+  # 逐个变量生成代码簿信息
+  for (var_name in variable_names) {
+    # 提取变量值的种类
+    variable_values <- unique(df[[var_name]])
+    
+    # 将变量值转换为区间表示
+    variable_value <- ifelse(length(variable_values) > 1,
+                             paste(range(variable_values), collapse = "-"),
+                             as.character(variable_values))
+    
+    # 确定变量描述和类别
+    variable_description <- switch(
+      var_name,
+      Subject = "the number of subjects",
+      Session = "the number of session",
+      Age = "the age of subject",
+      Clock.StartTimeOfDay = "start time of the experiment",
+      Group = "experimental group of the participant",
+      Handedness = "The subject's handedness",
+      Sex = "the gender of subject",
+      SubTrial = "The stage of the experiment, whether it is a practice stage or a formal experiment",
+      BlockList.Sample = "The block number of the reward experiment, NA means practices or other tasks",
+      BlockListE.Sample = "The block number of the emotion experiment, NA means practices or other tasks",
+      BlockListS.Sample = "The block number of the matching experiment, NA means practices or other tasks",
+      Match = "whether the label matches the shape or not",
+      ShapeE = "The social meaning represented by shape",
+      Label = "The social meaning represented by label",
+      CorrectAnswer = "The correct response of the current trial",
+      Target.ACC = "The accuracy of the current trial the reward task",
+      Target.RESP = "The key pressed by the participants at the current trial in the reward task",
+      Target.RT = "Reaction time at the current trial in the reward task",
+      TargetE.ACC = "The accuracy of the current trial the emotion task",
+      TargetE.RESP = "The key pressed by the participants at the current trial in the emotion task",
+      TargetE.RT = "Reaction time at the current trial in the emotion task",
+      TargetS.ACC = "The accuracy of the current trial the matching task",
+      TargetS.RESP = "The key pressed by the participants at the current trial in the matching task",
+      TargetS.RT = "Reaction time at the current trial in the matching task",
+      "NA"
+    )
+    
+    variable_category <- switch(
+      var_name,
+      Subject = "categorical",
+      Session = "numeric",
+      Age = "numeric",
+      Clock.StartTimeOfDay = "categorical",
+      Group = "numeric",
+      Handedness = "categorical",
+      Sex = "categorical",
+      SubTrial = "numeric",
+      BlockList.Sample = "numeric",
+      BlockListE.Sample = "numeric",
+      BlockListS.Sample = "numeric",
+      Match = "categorical",
+      ShapeE = "categorical",
+      Label = "categorical",
+      CorrectAnswer = "numeric",
+      Target.ACC = "numeric",
+      Target.RESP = "numeric",
+      Target.RT = "numeric",
+      TargetE.ACC = "numeric",
+      TargetE.RESP = "numeric",
+      TargetE.RT = "numeric",
+      TargetS.ACC = "numeric",
+      TargetS.RESP = "numeric",
+      TargetS.RT = "numeric",
+      "NA"
+    )
+    
+    # 构建数据框来存储变量值和种类
+    temp_df <- data.frame(
+      Variable_Name = var_name,
+      Variable_description = variable_description,
+      Variable_value = variable_value,
+      Variable_category = variable_category,
+      stringsAsFactors = FALSE
+    )
+    
+    # 将临时数据框添加到代码簿中
+    codebook <- bind_rows(codebook, temp_df)
+  }
+  
+  # 生成文件名
+  output_file <- gsub("\\.csv$", "_Codebook.xlsx", basename(file))
+  
+  # 设置输出路径
+  output_path <- file.path("D:/GitHub_programe/GitHub/Learn-how-to-use-git/Code_test/Database_test", output_file)
+  
+  # 将代码簿写入Excel文件
+  write_xlsx(codebook, output_path)
+}
 
 ```
 
