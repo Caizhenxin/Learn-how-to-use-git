@@ -1,34 +1,49 @@
 ---
 title: "PSQI_Data_Clean(BX)"
 author: "czx"
-date: "大学生问卷数据.csv"
+date: "大学生问卷数据.csv""210份_modified.csv "
 output: html_document
 ---
 
 #预处理问卷星文件  更新中~~
 
 ```{r}
-# # 读取CSV文件
-# data <- read.csv("your_file.csv")
-# 
-# # 删除第一列数据
-# data <- data[, -1]
-# 
-# # 重新命名第一行变量
-# colnames(data) <- c("id", "t1_h", "t1_min", "t2", "t3_h", "t3_min", "t4_1", "t4_2", 
-#                     "t5_a", "t5_b", "t5_c", "t5_d", "t5_e", "t5_f", "t5_g", "t5_h", 
-#                     "t5_i", "t5_j", "t6", "t7", "t8", "t9")
-# 
-# # 输出结果
-# write.csv(data, "updated_file.csv", row.names = FALSE)
+# 加载所需的包
+library(openxlsx)
+library(dplyr)
+# 定义函数，读取xlsx文件并将指定列中的值减一，并保存为csv格式
+decrement_values_and_save_as_csv <- function(file_name) {
+  # 读取xlsx文件
+  df <- read.xlsx(file_name)
+  
+  # 获取需要减一的列名
+  columns_to_decrement <- c(grep("^t5_", names(df), value = TRUE), "t6", "t7","t8","t9")
+  
+  # 逐列将数值减一
+  df[, columns_to_decrement] <- df[, columns_to_decrement] + 1
+  
+  # 构建新文件名
+  new_file_name <- sub(".xlsx", "_modified.csv", file_name)
+  
+  # 保存修改后的数据到csv文件
+  write.csv(df, new_file_name, row.names = FALSE)
+  
+  return(new_file_name)
+}
 
+# 示例用法
+input_file_name <- "210份.xlsx"  # 替换成你的文件名
+output_file_name <- decrement_values_and_save_as_csv(input_file_name)
+cat("处理完成，结果保存到: ", output_file_name, "\n")
+
+rm(input_file_name,output_file_name,decrement_values_and_save_as_csv)
 ```
 
 #正式处理数据
 
 ```{r}
 # 读取 CSV 文件并将所有列转换为数值类型
-psqi_data <- read.csv("大学生问卷数据.csv", header = TRUE, colClasses = "numeric", na.strings = c("", "00"))
+psqi_data <- read.csv("210份_modified.csv", header = TRUE, colClasses = "numeric", na.strings = c("", "00"))
 psqi_data[is.na(psqi_data)] <- 0
 
 # 确认所有列都已转换为数值类型
@@ -203,10 +218,10 @@ rm(sleep_duration_score,calculate_sleep_duration_score)
 
 ```{r}
 # 移除t5_a列
-psqi_data <- psqi_data[, !grepl("^t5_a", names(psqi_data))]
+psqi_data_a <- psqi_data[, !grepl("^t5_a", names(psqi_data))]
 
 # 获取剩余的条目5b到5j的应答
-sleep_disturbances <- psqi_data[, grep("^t5_", names(psqi_data))]
+sleep_disturbances <- psqi_data_a[, grep("^t5_", names(psqi_data))]
 
 # 定义函数计算睡眠障碍得分
 calculate_sleep_disturbance_score <- function(responses) {
@@ -230,7 +245,7 @@ sleep_disturbance_score <- apply(sleep_disturbances, 1, calculate_sleep_disturba
 # 将得分添加到数据框中
 psqi_data$V_score <- sleep_disturbance_score
 
-rm(sleep_disturbances,sleep_disturbance_score,calculate_sleep_disturbance_score)
+rm(sleep_disturbances,sleep_disturbance_score,calculate_sleep_disturbance_score,psqi_data_a)
 ```
 
 ##VI催眠药物(Used Sleep Medication)
@@ -296,13 +311,18 @@ rm(daytime_dysfunction_8,daytime_dysfunction_9,daytime_dysfunction_score,calcula
 
 ```
 
-```{r}
-write.csv(psqi_data, file = "PSQI_scores_raw.csv", row.names = FALSE)
-```
-
 ##整理，计算总分
 
 ```{r}
+# 读取第二个CSV文件，包含要筛选的ID列表
+id_list <- read.csv("大学生问卷数据.csv", header = TRUE)# 使用筛选条件进行数据筛选
+
+psqi_data <- psqi_data %>%
+  filter(id %in% id_list$id)
+
+psqi_scores <- psqi_data %>%
+  filter(id %in% id_list$id)
+
 # 假设已有的变量名称为I_score, II_score, III_score, IV_score, V_score, VI_score, VII_score, id
 
 # 从已有变量中筛选相关变量
@@ -313,7 +333,7 @@ psqi_scores$PSQI_total <- rowSums(psqi_scores[, -1], na.rm = TRUE)  # 不计算i
 
 # 输出为新的CSV文件
 write.csv(psqi_scores, file = "PSQI_scores.csv", row.names = FALSE)
-
+write.csv(psqi_data, file = "PSQI_scores_raw.csv", row.names = FALSE)
 
 
 # rm(psqi_data,psqi_scores)
