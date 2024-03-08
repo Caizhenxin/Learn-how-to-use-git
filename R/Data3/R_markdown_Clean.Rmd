@@ -5,12 +5,18 @@ date: "大学生问卷数据.csv""210份_modified.csv "
 output: html_document
 ---
 
-#预处理问卷星文件  更新中~~
 
 ```{r}
 # 加载所需的包
 library(openxlsx)
 library(dplyr)
+```
+
+
+
+#预处理问卷星文件  更新中~~
+
+```{r}
 # 定义函数，读取xlsx文件并将指定列中的值减一，并保存为csv格式
 decrement_values_and_save_as_csv <- function(file_name) {
   # 读取xlsx文件
@@ -43,7 +49,7 @@ rm(input_file_name,output_file_name,decrement_values_and_save_as_csv)
 
 ```{r}
 # 读取 CSV 文件并将所有列转换为数值类型
-psqi_data <- read.csv("210份_modified.csv", header = TRUE, colClasses = "numeric", na.strings = c("", "00"))
+psqi_data <- read.csv("210份.csv", header = TRUE, colClasses = "numeric", na.strings = c("", "00"))
 psqi_data[is.na(psqi_data)] <- 0
 
 # 确认所有列都已转换为数值类型
@@ -149,9 +155,9 @@ sleep_duration <- psqi_data$sleep_time
 calculate_sleep_duration_score <- function(duration) {
   if (duration > 7) {
     return(0)
-  } else if (duration >= 6 && duration <= 7) {
+  } else if (duration > 6 && duration <= 7) {
     return(1)
-  } else if (duration >= 5 && duration < 6) {
+  } else if (duration >= 5 && duration <= 6) {
     return(2)
   } else {
     return(3)
@@ -221,7 +227,9 @@ rm(sleep_duration_score,calculate_sleep_duration_score)
 psqi_data_a <- psqi_data[, !grepl("^t5_a", names(psqi_data))]
 
 # 获取剩余的条目5b到5j的应答
-sleep_disturbances <- psqi_data_a[, grep("^t5_", names(psqi_data))]
+sleep_disturbances <- psqi_data_a[, grep("^t5_", names(psqi_data))[-10]]
+
+
 
 # 定义函数计算睡眠障碍得分
 calculate_sleep_disturbance_score <- function(responses) {
@@ -234,8 +242,11 @@ calculate_sleep_disturbance_score <- function(responses) {
     return(1)
   } else if (total_score <= 18) {
     return(2)
-  } else {
+  } else if (total_score <= 27)  {
     return(3)
+  }
+    else{
+    return()
   }
 }
 
@@ -322,20 +333,16 @@ psqi_data <- psqi_data %>%
 
 psqi_scores <- psqi_data %>%
   filter(id %in% id_list$id)
-
 # 假设已有的变量名称为I_score, II_score, III_score, IV_score, V_score, VI_score, VII_score, id
 
 # 从已有变量中筛选相关变量
 psqi_scores <- psqi_data[, c("id","I_score", "II_score", "III_score", "IV_score", "V_score", "VI_score", "VII_score")]
 
-# 计算PSQI总分
-psqi_scores$PSQI_total <- rowSums(psqi_scores[, -1], na.rm = TRUE)  # 不计算id列
-
 # 输出为新的CSV文件
 write.csv(psqi_scores, file = "PSQI_scores.csv", row.names = FALSE)
 write.csv(psqi_data, file = "PSQI_scores_raw.csv", row.names = FALSE)
-
-
+rm(id_list)
+#排除异常值：如t5_a到t5_i中，有不符合设定的值（规定的是1-4，却出现了5）需要排除
 # rm(psqi_data,psqi_scores)
 ```
 
