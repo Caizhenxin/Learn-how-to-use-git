@@ -1,0 +1,37 @@
+---
+title: "Pre2"
+author: "czx"
+date: "2024-03-08"
+output: html_document
+---
+
+
+```{r}
+# 定义函数来打印树形结构
+print_tree <- function(path, indent="") {
+  # 获取当前目录的内容
+  content <- list.files(path)
+  
+  # 遍历当前目录的内容
+  for (item in content) {
+    # 构建完整路径
+    full_path <- file.path(path, item)
+    
+    # 打印缩进和当前项目
+    cat(indent, "└─ ", item, "\n", sep="")
+    
+    # 如果是目录，则递归调用该函数
+    if (file.info(full_path)$isdir) {
+      print_tree(full_path, paste(indent, "│   ", sep=""))
+    }
+  }
+}
+
+# 指定目录路径
+directory_path <- "D:/GitHub_programe/GitHub/SPE_Database/4_Data_Extraction/4_2_Open_Data"
+
+# 打印树形结构
+print_tree(directory_path)
+
+```
+
