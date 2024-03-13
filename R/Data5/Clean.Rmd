@@ -1,0 +1,69 @@
+---
+title: "Untitled"
+author: "czx"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+# 读取CSV文件
+data <- read.csv("data.csv")
+# 使用aggregate函数计算每个被试的平均ACC值
+mean_acc <- aggregate(ACC ~ Subject, data, mean)
+
+# # 显示结果
+# print(mean_acc)
+
+# 将结果写入新的CSV文件
+write.csv(mean_acc, "accuracy_results.csv", row.names = FALSE)
+
+```
+
+```{r}
+# 读取CSV文件
+data <- read.csv("data.csv")
+
+# 按照被试ID计算正确率、正确个数和错误个数
+accuracy <- tapply(data$ACC, data$Subject, function(x) {
+  correct <- sum(x == 1)
+  total <- length(x)
+  accuracy <- correct / total
+  correct_count <- correct
+  error_count <- total - correct
+  c(correct_rate = unique(data$Subject)[Subject],accuracy, correct_count = correct_count, error_count = error_count)
+})
+
+# 将结果转换为数据框
+accuracy_df <- as.data.frame(do.call(rbind, accuracy))
+
+
+
+
+# 将结果写入新的CSV文件
+write.csv(accuracy_df, "accuracy_results.csv", row.names = FALSE)
+
+```
+
+```{r}
+# 导入所需的包
+library(dplyr)
+
+# 读取CSV文件
+data <- read.csv("data.csv")
+
+# 计算每个主题的准确率、正确个数和错误个数
+result <- data %>%
+  group_by(Subject) %>%
+  summarise(
+    accuracy = mean(ACC),
+    correct_count = sum(ACC == 1),
+    incorrect_count = sum(ACC == 0),
+    Age = first(Age)
+  )
+
+# 将结果导出为CSV文件
+write.csv(result, "accuracy_results.csv", row.names = FALSE)
+
+
+```
+
