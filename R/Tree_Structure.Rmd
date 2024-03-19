@@ -1,0 +1,85 @@
+---
+title: "Tree_Structure"
+author: "czx"
+date: "2024-03-19"
+output: html_document
+---
+
+```{r}
+# 定义函数来获取文件夹结构并以树形结构输出
+print_folder_structure <- function(path, indent="") {
+  # 获取当前目录的内容
+  content <- list.files(path)
+  
+  # 打印当前目录名称
+  cat(indent, "└─ ", basename(path), "\n", sep="")
+  
+  # 遍历当前目录的内容
+  for (item in content) {
+    # 构建完整路径
+    full_path <- file.path(path, item)
+    
+    # 如果是目录，则递归调用该函数
+    if (file.info(full_path)$isdir) {
+      print_folder_structure(full_path, paste(indent, "    ", sep=""))
+    } else {
+      # 打印文件名称
+      cat(paste(indent, "    │", sep=""), item, "\n", sep="")
+    }
+  }
+}
+
+# 指定目录路径
+directory_path <- "D:/GitHub_programe/GitHub/Learn-how-to-use-git"
+
+# 打印文件夹结构
+print_folder_structure(directory_path)
+
+```
+
+```{r}
+# 定义函数来将文件夹结构输出到 Readme.txt 文件中
+write_folder_structure_to_file <- function(path, output_file, indent="") {
+  # 获取当前目录的内容
+  content <- list.files(path)
+  
+  # 打开文件以追加模式写入
+  cat(paste(indent, "└─ ", basename(path), "\n", sep=""), file=output_file, append=TRUE)
+  
+  # 遍历当前目录的内容
+  for (item in content) {
+    # 构建完整路径
+    full_path <- file.path(path, item)
+    
+    # 如果是目录，则递归调用该函数
+    if (file.info(full_path)$isdir) {
+      write_folder_structure_to_file(full_path, output_file, paste(indent, "    ", sep=""))
+    } else {
+      # 写入文件名称到文件
+      cat(paste(indent, "    │", sep=""), item, "\n", sep="", file=output_file, append=TRUE)
+    }
+  }
+}
+
+# 指定目录路径
+directory_path <- "D:/GitHub_programe/GitHub/Learn-how-to-use-git"
+
+# 指定输出文件路径
+output_file <- "Readme.txt"
+
+# 打开文件
+file_conn <- file(output_file, "w")
+
+# 写入文件夹结构到 Readme.txt 文件中
+write_folder_structure_to_file(directory_path, file_conn)
+
+# 关闭文件连接
+close(file_conn)
+
+# 提示用户文件已写入完成
+cat("文件夹结构已写入到文件：", output_file, "\n")
+# rm(directory_path,file_conn,output_file,print_folder_structure,write_folder_structure_to_file)
+
+```
+
+
