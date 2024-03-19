@@ -1,6 +1,4 @@
 └─ Learn-how-to-use-git
-    │123.txt
-    │321.xls
     └─ Code_test
         └─ Database_test
             │tree_structure.txt
@@ -13,8 +11,6 @@
             │test03.py
             │test04.py
             │test05.py
-    └─ data
-        │data.xls
     └─ Games-master
         └─ GluttonousSnake
         └─ Minesweeper
