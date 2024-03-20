@@ -1,5 +1,7 @@
 # Learn-how-to-use-git
-#This is a place which I can practice with
+This is a place which I can practice with
+```
+#Folder Structure
 └─ Learn-how-to-use-git
     └─ Code_test
         └─ Database_test
@@ -35,4 +37,4 @@
         │Readme.txt
         │Tree_Structure.Rmd
     │README.md
-
+```
