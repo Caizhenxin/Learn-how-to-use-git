@@ -1,0 +1,195 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+# 加载所需的库
+library(ggplot2)
+library(dplyr)
+library(emmeans)
+
+# 读取数据
+data <- read.csv("Wang_2016_EPHPP_Exp1_Association.csv")
+
+# 确保没有缺失值
+data <- na.omit(data)
+
+# 确保Identity和Subject为因子类型
+data$Identity <- as.factor(data$Identity)
+data$Subject <- as.factor(data$Subject)
+
+# 计算误差率
+data <- data %>%
+  mutate(ErrorRate = 1 - Target.ACC)
+
+# 简化的ANOVA模型
+anova_model <- aov(ErrorRate ~ Identity + Error(Subject), data = data)
+summary(anova_model)
+
+# 计算事后比较
+emmeans_results <- emmeans(anova_model, "Identity")
+pairs_results <- pairs(emmeans_results)
+
+# 提取p值并创建显著性标注
+pairs_summary <- summary(pairs_results)
+
+# 创建显著性标注
+significance_labels <- rep("ns", nrow(pairs_summary))
+significance_labels[pairs_summary$p.value < 0.01] <- "**"
+significance_labels[pairs_summary$p.value < 0.05] <- "*"
+
+# 将显著性标记添加到错误率数据框
+error_rates <- data %>%
+  group_by(Identity) %>%
+  summarise(ErrorRate = mean(ErrorRate, na.rm = TRUE),
+            SD = sd(ErrorRate, na.rm = TRUE)) %>%
+  mutate(Significance = significance_labels)
+
+# 在ErrorRate中选择最高的y值用于标注显著性
+max_y <- max(error_rates$ErrorRate + error_rates$SD) * 1.1
+
+# 绘制误差率条形图
+ggplot(error_rates, aes(x = Identity, y = ErrorRate)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_errorbar(aes(ymin = ErrorRate - SD, ymax = ErrorRate + SD), width = 0.2) +
+  labs(title = "Error Rates by Identity", x = "Identity", y = "Error Rate") +
+  geom_text(aes(label = Significance, y = max_y), vjust = -0.5) +
+  ylim(0, 0.5) +
+  theme_minimal()
+
+# 计算反应时间的均值和标准差
+rt_data <- data %>%
+  group_by(Identity) %>%
+  summarise(MeanRT = mean(Target.RT, na.rm = TRUE),
+            SD = sd(Target.RT, na.rm = TRUE))
+
+# 绘制反应时间条形图
+ggplot(rt_data, aes(x = Identity, y = MeanRT)) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(aes(ymin = MeanRT - SD, ymax = MeanRT + SD), width = 0.2) +
+  labs(title = "Reaction Time by Identity", x = "Identity", y = "Mean Reaction Time (ms)") +
+  theme_minimal()
+
+```
+
+```{r}
+# 加载所需的库
+library(ggplot2)
+library(dplyr)
+library(emmeans)
+
+# 读取数据
+data <- read.csv("Wang_2016_EPHPP_Exp1_Association.csv")
+
+# 确保没有缺失值
+data <- na.omit(data)
+
+# 确保Identity和Subject为因子类型
+data$Identity <- factor(data$Identity, levels = c("Self", "Friend", "Stranger"))
+data$Subject <- as.factor(data$Subject)
+
+# 计算误差率
+data <- data %>%
+  mutate(ErrorRate = 1 - Target.ACC)
+
+# 简化的ANOVA模型
+anova_model <- aov(ErrorRate ~ Identity + Error(Subject), data = data)
+summary(anova_model)
+
+# 计算事后比较
+emmeans_results <- emmeans(anova_model, "Identity")
+pairs_results <- pairs(emmeans_results)
+
+# 提取p值并创建显著性标注
+pairs_summary <- summary(pairs_results)
+
+# 创建显著性标注
+significance_labels <- rep("ns", nrow(pairs_summary))
+significance_labels[pairs_summary$p.value < 0.01] <- "**"
+significance_labels[pairs_summary$p.value < 0.05] <- "*"
+
+# 计算误差率和标准差
+error_rates <- data %>%
+  group_by(Identity) %>%
+  summarise(ErrorRate = mean(ErrorRate, na.rm = TRUE),
+            SD_Error = sd(ErrorRate, na.rm = TRUE))
+
+# 将显著性标记添加到错误率数据框中
+error_rates <- error_rates %>%
+  mutate(Significance = significance_labels[1:3])  # 只取前三个标记
+
+# 计算最高的y值用于标注显著性
+max_error_rate <- max(error_rates$ErrorRate + error_rates$SD_Error)
+
+# 绘制误差率条形图
+ggplot(error_rates, aes(x = Identity, y = ErrorRate)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_errorbar(aes(ymin = ErrorRate - SD_Error, ymax = ErrorRate + SD_Error), width = 0.2) +
+  labs(title = "Error Rates by Identity", x = "Identity", y = "Error Rate") +
+  geom_text(aes(label = Significance, y = max_error_rate + 0.05), vjust = 0) +  # 调整标注位置
+  ylim(0, 0.5) +
+  theme_minimal()
+
+# 计算反应时间的均值和标准差
+rt_data <- data %>%
+  group_by(Identity) %>%
+  summarise(MeanRT = mean(Target.RT, na.rm = TRUE),
+            SD_RT = sd(Target.RT, na.rm = TRUE))
+
+# 绘制反应时间条形图
+ggplot(rt_data, aes(x = Identity, y = MeanRT)) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(aes(ymin = MeanRT - SD_RT, ymax = MeanRT + SD_RT), width = 0.2) +
+  labs(title = "Reaction Time by Identity", x = "Identity", y = "Mean Reaction Time (ms)") +
+  theme_minimal()
+
+
+```
+
+```{r}
+# 加载所需的库
+library(ggplot2)
+library(dplyr)
+library(emmeans)
+
+# 读取数据
+data <- read.csv("Wang_2016_EPHPP_Exp1_Association.csv")
+
+# 确保没有缺失值
+data <- na.omit(data)
+
+# 确保Identity和Subject为因子类型
+data$Identity <- factor(data$Identity, levels = c("Self", "Friend", "Stranger"))
+data$Subject <- as.factor(data$Subject)
+
+# 计算准确率（ACC）和标准差
+acc_data <- data %>%
+  group_by(Identity) %>%
+  summarise(ACC = mean(Target.ACC, na.rm = TRUE),
+            SD_ACC = sd(Target.ACC, na.rm = TRUE))
+
+# 绘制准确率条形图
+ggplot(acc_data, aes(x = Identity, y = ACC)) +
+  geom_bar(stat = "identity", position = position_dodge(), fill = "skyblue") +
+  geom_errorbar(aes(ymin = ACC - SD_ACC, ymax = ACC + SD_ACC), width = 0.2) +
+  labs(title = "Accuracy Rates by Identity", x = "Identity", y = "Accuracy Rate") +
+  ylim(0, 1) +  # 如果准确率范围是0到1
+  theme_minimal()
+
+# 计算反应时间的均值和标准差
+rt_data <- data %>%
+  group_by(Identity) %>%
+  summarise(MeanRT = mean(Target.RT, na.rm = TRUE),
+            SD_RT = sd(Target.RT, na.rm = TRUE))
+
+# 绘制反应时间条形图
+ggplot(rt_data, aes(x = Identity, y = MeanRT)) +
+  geom_bar(stat = "identity", position = position_dodge(), fill = "lightgreen") +
+  geom_errorbar(aes(ymin = MeanRT - SD_RT, ymax = MeanRT + SD_RT), width = 0.2) +
+  labs(title = "Reaction Time by Identity", x = "Identity", y = "Mean Reaction Time (ms)") +
+  theme_minimal()
+
+```
