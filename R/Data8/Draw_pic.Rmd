@@ -193,3 +193,254 @@ ggplot(rt_data, aes(x = Identity, y = MeanRT)) +
   theme_minimal()
 
 ```
+
+
+```{r}
+# 读取数据
+data <- read.csv("Wang_2016_EPHPP_Exp1_Association.csv")
+
+# 检查数据结构
+str(data)
+data$Target.ACC <- as.numeric(data$Target.ACC)
+data$Target.RT <- as.numeric(data$Target.RT)
+
+# 计算错误比例和平均反应时间
+library(dplyr)
+library(ggpubr)
+summary_data <- data %>%
+  group_by(Identity) %>%
+  summarise(
+    mean_error = mean(Target.ACC == 0),
+    mean_RT = mean(Target.RT),
+    se_error = sd(Target.ACC == 0) / sqrt(n()),
+    se_RT = sd(Target.RT) / sqrt(n())
+  )
+# 进行统计检验 (ANOVA)
+error_aov <- aov(Target.ACC ~ Identity, data = data)
+summary(error_aov)
+
+# 使用 ggpubr 包来添加显著性标记
+ggplot(summary_data, aes(x = Identity, y = mean_error)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_error - se_error, ymax = mean_error + se_error), 
+                width = 0.2) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  theme_minimal() +
+  stat_compare_means(comparisons = list(c("Self", "Friend"), c("Self", "Stranger"), c("Friend", "Stranger")), 
+                     method = "t.test", label = "p.signif")
+
+# 进行反应时间的统计检验 (ANOVA)
+rt_aov <- aov(Target.RT ~ Identity, data = data)
+summary(rt_aov)
+
+# 反应时间图，并添加显著性标记
+ggplot(summary_data, aes(x = Identity, y = mean_RT)) +
+  geom_bar(stat = "identity", fill = "lightcoral", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_RT - se_RT, ymax = mean_RT + se_RT), 
+                width = 0.2) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  theme_minimal() +
+  stat_compare_means(comparisons = list(c("Self", "Friend"), c("Self", "Stranger"), c("Friend", "Stranger")), 
+                     method = "t.test", label = "p.signif")
+
+```
+
+```{r}
+# 加载必要包
+library(ggplot2)
+library(ggpubr)
+library(dplyr)
+
+# 确保数据格式正确
+data$Identity <- as.factor(data$Identity)
+data$Target.ACC <- as.numeric(data$Target.ACC)
+
+# 计算均值和标准误差
+summary_data <- data %>%
+  group_by(Identity) %>%
+  summarise(
+    mean_error = mean(Target.ACC == 0),
+    se_error = sd(Target.ACC == 0) / sqrt(n())
+  )
+
+# 调整 Identity 的顺序为 Self -> Friend -> Stranger
+data$Identity <- factor(data$Identity, levels = c( "Friend","Self", "Stranger"))
+
+# 绘制错误率图
+ggplot(summary_data, aes(x = Identity, y = mean_error)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_error - se_error, ymax = mean_error + se_error), 
+                width = 0.2) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  theme_minimal() +
+  stat_compare_means(comparisons = comparisons, method = "wilcox.test", label = "p.signif") +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14, face = "bold")
+  )
+
+# 计算反应时间的均值和标准误
+summary_data_rt <- data %>%
+  group_by(Identity) %>%
+  summarise(
+    mean_RT = mean(Target.RT),
+    se_RT = sd(Target.RT) / sqrt(n())
+  )
+
+# 绘制反应时间图，并调整顺序
+ggplot(summary_data_rt, aes(x = Identity, y = mean_RT)) +
+  geom_bar(stat = "identity", fill = "lightcoral", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_RT - se_RT, ymax = mean_RT + se_RT), 
+                width = 0.2) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  scale_y_continuous(breaks = seq(800, 1300, by = 100), limits = c(950, 1300)) +
+  theme_minimal() +
+  stat_compare_means(comparisons = comparisons, method = "wilcox.test", label = "p.signif") +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14, face = "bold")
+  )
+
+```
+
+```{r}
+# 加载必要包
+library(ggplot2)
+library(ggpubr)
+library(dplyr)
+
+# 确保数据格式正确
+data$Identity <- as.factor(data$Identity)
+data$Target.ACC <- as.numeric(data$Target.ACC)
+
+# 计算均值和标准误差
+summary_data <- data %>%
+  group_by(Identity) %>%
+  summarise(
+    mean_error = mean(Target.ACC == 0, na.rm = TRUE),
+    se_error = sd(Target.ACC == 0, na.rm = TRUE) / sqrt(n())
+  )
+
+# 调整 Identity 的顺序为 Self -> Friend -> Stranger
+data$Identity <- factor(data$Identity, levels = c("Self", "Friend", "Stranger"))
+
+# 绘制错误率图
+ggplot(summary_data, aes(x = Identity, y = mean_error)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_error - se_error, ymax = mean_error + se_error), 
+                width = 0.2) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  theme_minimal() +
+  stat_compare_means(comparisons = comparisons, method = "wilcox.test", label = "p.signif") +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14, face = "bold")
+  )
+
+# 计算反应时间的均值和标准误
+summary_data_rt <- data %>%
+  group_by(Identity) %>%
+  summarise(
+    mean_RT = mean(Target.RT, na.rm = TRUE),
+    se_RT = sd(Target.RT, na.rm = TRUE) / sqrt(n())
+  )
+
+# 绘制反应时间图，并调整顺序
+ggplot(summary_data_rt, aes(x = Identity, y = mean_RT)) +
+  geom_bar(stat = "identity", fill = "lightcoral", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_RT - se_RT, ymax = mean_RT + se_RT), 
+                width = 0.2) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  scale_y_continuous(limits = c(800, 1300), breaks = seq(800, 1300, by = 100)) +
+  theme_minimal() +
+  stat_compare_means(comparisons = comparisons, method = "wilcox.test", label = "p.signif") +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14, face = "bold")
+  )
+
+```
+
+```{r}
+# 读取数据
+data <- read.csv("Wang_2016_EPHPP_Exp1_Association.csv")
+
+# 检查数据结构
+str(data)
+
+# 调整 Identity 的顺序为 Self -> Friend -> Stranger
+data$Identity <- factor(data$Identity, levels = c("Self", "Friend", "Stranger"))
+
+# 计算错误比例和平均反应时间
+library(dplyr)
+summary_data <- data %>%
+  group_by(Identity) %>%
+  summarise(
+    mean_error = mean(Target.ACC == 0),
+    mean_RT = mean(Target.RT),
+    se_error = sd(Target.ACC == 0) / sqrt(n()),
+    se_RT = sd(Target.RT) / sqrt(n())
+  )
+
+# 加载绘图库
+library(ggplot2)
+
+# 错误比例图
+ggplot(summary_data, aes(x = Identity, y = mean_error)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_error - se_error, ymax = mean_error + se_error), 
+                width = 0.2) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  theme_minimal()
+
+# 反应时间图
+ggplot(summary_data, aes(x = Identity, y = mean_RT)) +
+  geom_bar(stat = "identity", fill = "lightcoral", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_RT - se_RT, ymax = mean_RT + se_RT), width = 0.2) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  coord_cartesian(ylim = c(900, 1100)) +
+  theme_minimal()
+
+
+```
+```{r}
+# 读取数据
+data <- read.csv("Wang_2016_EPHPP_Exp1_Switch.csv")
+
+# 检查数据结构
+str(data)
+
+# 调整 Identity 的顺序为 Self -> Friend -> Stranger
+data$Identity <- factor(data$Identity, levels = c("Self", "Friend", "Stranger"))
+
+# 计算错误比例和平均反应时间
+library(dplyr)
+summary_data <- data %>%
+  group_by(Identity) %>%
+  summarise(
+    mean_error = mean(Target.ACC == 0),
+    mean_RT = mean(Target.RT),
+    sd_error = sd(Target.ACC == 0) / sqrt(n()),
+    sd_RT = sd(Target.RT) / sqrt(n())
+  )
+
+# 加载绘图库
+library(ggplot2)
+
+# 错误比例图
+ggplot(summary_data, aes(x = Identity, y = mean_error)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error), 
+                width = 0.2) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  theme_minimal()
+
+# 反应时间图
+ggplot(summary_data, aes(x = Identity, y = mean_RT)) +
+  geom_bar(stat = "identity", fill = "lightcoral", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_RT - sd_RT, ymax = mean_RT + sd_RT), width = 0.2) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  coord_cartesian(ylim = c(400,700)) +
+  theme_minimal()
+```
+
