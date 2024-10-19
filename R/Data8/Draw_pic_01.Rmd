@@ -53,7 +53,7 @@ ggplot(summary_data, aes(x = Identity, y = mean_RT)) +
   theme_minimal()
 ```
 
-# 
+# Exp1 Breaking & Matching
 ```{r}
 # 读取数据
 data <- read.csv("Wang_2016_EPHPP_Exp1_Switch.csv")
@@ -77,8 +77,8 @@ library(dplyr)
 summary_data <- data %>%
   group_by(Identity) %>%
   summarise(
-    mean_error = mean(Target.ACC == 0),
-    mean_RT = mean(Target.RT),
+    mean_error = mean(Target.ACC == 0, na.rm = TRUE),
+    mean_RT = mean(Target.RT, na.rm = TRUE),
     sd_error = sd(Target.ACC == 0) / sqrt(n()),
     sd_RT = sd(Target.RT) / sqrt(n())
   )
@@ -104,3 +104,198 @@ ggplot(summary_data, aes(x = Identity, y = mean_RT)) +
   theme_minimal()
 ```
 
+# Exp1 Breaking & Nonmatching
+```{r}
+# 读取数据
+data <- read.csv("Wang_2016_EPHPP_Exp1_Switch.csv")
+
+# 检查数据结构
+str(data)
+
+# 添加 Matching 列，判断 Label 和 Identity 是否相等
+data <- data %>%
+  mutate(Matching = ifelse(Label == Identity, "Matching", "Nonmatching"))
+
+# 调整 Identity 的顺序为 Self -> Friend -> Stranger
+data$Identity <- factor(data$Identity, levels = c("Self", "Friend", "Stranger"))
+
+# 筛选 Matching 条件
+matching_data <- data %>%
+  filter(Matching == "Nonmatching")
+
+# 计算错误比例和平均反应时间
+library(dplyr)
+summary_data <- data %>%
+  group_by(Identity) %>%
+  summarise(
+    mean_error = mean(Target.ACC == 0, na.rm = TRUE),
+    mean_RT = mean(Target.RT, na.rm = TRUE),
+    sd_error = sd(Target.ACC == 0) / sqrt(n()),
+    sd_RT = sd(Target.RT) / sqrt(n())
+  )
+
+# 加载绘图库
+library(ggplot2)
+
+# 错误比例图
+ggplot(summary_data, aes(x = Identity, y = mean_error)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error), 
+                width = 0.2) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  # coord_cartesian(ylim = c(0, 0.5)) +
+  theme_minimal()
+
+# 反应时间图
+ggplot(summary_data, aes(x = Identity, y = mean_RT)) +
+  geom_bar(stat = "identity", fill = "lightcoral", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_RT - sd_RT, ymax = mean_RT + sd_RT), width = 0.2) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  coord_cartesian(ylim = c(500,650)) +
+  theme_minimal()
+```
+
+# Figure 4. A B
+```{r}
+# 读取数据
+data <- read.csv("Wang_2016_EPHPP_Exp2_Association.csv")
+
+# 检查数据结构
+str(data)
+
+# 调整 Identity 的顺序为 Self -> Friend -> Stranger
+data$Identity <- factor(data$Identity, levels = c("Self", "Friend", "Stranger"))
+
+# 计算错误比例和平均反应时间
+library(dplyr)
+summary_data <- data %>%
+  group_by(Identity) %>%
+  summarise(
+    mean_error = mean(Target.ACC == 0),
+    mean_RT = mean(Target.RT),
+    sd_error = sd(Target.ACC == 0) / sqrt(n()),
+    sd_RT = sd(Target.RT) / sqrt(n())
+  )
+
+# 加载绘图库
+library(ggplot2)
+
+# 错误比例图
+ggplot(summary_data, aes(x = Identity, y = mean_error)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error), 
+                width = 0.2) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  coord_cartesian(ylim = c(0, 0.4)) +
+  theme_minimal()
+
+# 反应时间图
+ggplot(summary_data, aes(x = Identity, y = mean_RT)) +
+  geom_bar(stat = "identity", fill = "lightcoral", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_RT - sd_RT, ymax = mean_RT + sd_RT), width = 0.2) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  coord_cartesian(ylim = c(900, 1100)) +
+  theme_minimal()
+```
+
+# Exp2 Breaking & Matching
+```{r}
+# 读取数据
+data <- read.csv("Wang_2016_EPHPP_Exp2_Switch.csv")
+
+# 检查数据结构
+str(data)
+
+# 添加 Matching 列，判断 Label 和 Identity 是否相等
+data <- data %>%
+  mutate(Matching = ifelse(Label == Identity, "Matching", "Nonmatching"))
+
+# 调整 Identity 的顺序为 Self -> Friend -> Stranger
+data$Identity <- factor(data$Identity, levels = c("Self", "Friend", "Stranger"))
+
+# 筛选 Matching 条件
+matching_data <- data %>%
+  filter(Matching == "Matching")
+
+# 计算错误比例和平均反应时间
+library(dplyr)
+summary_data <- data %>%
+  group_by(Identity) %>%
+  summarise(
+    mean_error = mean(Target.ACC == 0, na.rm = TRUE),
+    mean_RT = mean(Target.RT, na.rm = TRUE),
+    sd_error = sd(Target.ACC == 0) / sqrt(n()),
+    sd_RT = sd(Target.RT) / sqrt(n())
+  )
+
+# 加载绘图库
+library(ggplot2)
+
+# 错误比例图
+ggplot(summary_data, aes(x = Identity, y = mean_error)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error), 
+                width = 0.2) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  # coord_cartesian(ylim = c(0, 0.5)) +
+  theme_minimal()
+
+# 反应时间图
+ggplot(summary_data, aes(x = Identity, y = mean_RT)) +
+  geom_bar(stat = "identity", fill = "lightcoral", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_RT - sd_RT, ymax = mean_RT + sd_RT), width = 0.2) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  coord_cartesian(ylim = c(500,650)) +
+  theme_minimal()
+```
+
+# Exp2 Breaking & Nonmatching
+```{r}
+# 读取数据
+data <- read.csv("Wang_2016_EPHPP_Exp2_Switch.csv")
+
+# 检查数据结构
+str(data)
+
+# 添加 Matching 列，判断 Label 和 Identity 是否相等
+data <- data %>%
+  mutate(Matching = ifelse(Label == Identity, "Matching", "Nonmatching"))
+
+# 调整 Identity 的顺序为 Self -> Friend -> Stranger
+data$Identity <- factor(data$Identity, levels = c("Self", "Friend", "Stranger"))
+
+# 筛选 Matching 条件
+matching_data <- data %>%
+  filter(Matching == "Nonmatching")
+
+# 计算错误比例和平均反应时间
+library(dplyr)
+summary_data <- data %>%
+  group_by(Identity) %>%
+  summarise(
+    mean_error = mean(Target.ACC == 0, na.rm = TRUE),
+    mean_RT = mean(Target.RT, na.rm = TRUE),
+    sd_error = sd(Target.ACC == 0) / sqrt(n()),
+    sd_RT = sd(Target.RT) / sqrt(n())
+  )
+
+# 加载绘图库
+library(ggplot2)
+
+# 错误比例图
+ggplot(summary_data, aes(x = Identity, y = mean_error)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error), 
+                width = 0.2) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  # coord_cartesian(ylim = c(0, 0.5)) +
+  theme_minimal()
+
+# 反应时间图
+ggplot(summary_data, aes(x = Identity, y = mean_RT)) +
+  geom_bar(stat = "identity", fill = "lightcoral", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = mean_RT - sd_RT, ymax = mean_RT + sd_RT), width = 0.2) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  coord_cartesian(ylim = c(500,650)) +
+  theme_minimal()
+```

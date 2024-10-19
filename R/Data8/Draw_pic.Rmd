@@ -293,7 +293,7 @@ ggplot(summary_data_rt, aes(x = Identity, y = mean_RT)) +
   geom_errorbar(aes(ymin = mean_RT - se_RT, ymax = mean_RT + se_RT), 
                 width = 0.2) +
   labs(x = "Identity", y = "Reaction Times (ms)") +
-  scale_y_continuous(breaks = seq(800, 1300, by = 100), limits = c(950, 1300)) +
+  # scale_y_continuous(breaks = seq(800, 1300, by = 100), limits = c(950, 1300)) +
   theme_minimal() +
   stat_compare_means(comparisons = comparisons, method = "wilcox.test", label = "p.signif") +
   theme(
