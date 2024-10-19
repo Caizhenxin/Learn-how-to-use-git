@@ -1,0 +1,437 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Exp1
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(ggokabeito)
+library(dplyr)
+
+# Read and process data for Experiment 1
+data1 <- read.csv("Wang_2016_EPHPP_Exp1_Switch.csv")
+data1$Task <- "Breaking"
+data1$Identity <- factor(data1$Identity, levels = c("Self", "Friend", "Stranger"))
+summary_data1 <- data1 %>%
+  group_by(Task, Identity) %>%
+  summarise(mean_error = mean(Target.ACC == 0),
+            mean_RT = mean(Target.RT),
+            sd_error = sd(Target.ACC == 0) / sqrt(n()),
+            sd_RT = sd(Target.RT) / sqrt(n()))
+
+# Read and process data for Experiment 2
+data2 <- read.csv("Wang_2016_EPHPP_Exp1_Association.csv")
+data2$Task <- "Association"
+data2$Identity <- factor(data2$Identity, levels = c("Self", "Friend", "Stranger"))
+summary_data2 <- data2 %>%
+  group_by(Task, Identity) %>%
+  summarise(mean_error = mean(Target.ACC == 0, na.rm = TRUE),
+            mean_RT = mean(Target.RT, na.rm = TRUE),
+            sd_error = sd(Target.ACC == 0) / sqrt(n()),
+            sd_RT = sd(Target.RT) / sqrt(n()))
+
+# Combine data
+summary_data <- rbind(summary_data1, summary_data2)
+
+# Custom color palette
+cbp <- ggokabeito::scale_okabe_ito(aesthetics = c("fill", "color"), order=c(2,1,7,3:6))
+
+# Combined error proportion plot
+ggplot(summary_data, aes(x = Identity, y = mean_error, fill = Task)) +
+  geom_bar(stat = "identity", color = "black", width = 0.4, position = position_dodge(width = 0.5)) +
+  geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error), 
+                width = 0.2, position = position_dodge(width = 0.5)) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  coord_cartesian(ylim = c(0, 0.4)) +
+  cbp +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Combined reaction times plot
+ggplot(summary_data, aes(x = Identity, y = mean_RT, fill = Task)) +
+  geom_bar(stat = "identity", color = "black", width = 0.4, position = position_dodge(width = 0.5)) +
+  geom_errorbar(aes(ymin = mean_RT - sd_RT, ymax = mean_RT + sd_RT), 
+                width = 0.2, position = position_dodge(width = 0.5)) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  coord_cartesian(ylim = c(500, 1050)) +
+  cbp +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+# Exp2
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(ggokabeito)
+library(dplyr)
+
+# Read and process data for Experiment 1
+data1 <- read.csv("Wang_2016_EPHPP_Exp2_Switch.csv")
+data1$Task <- "Breaking"
+data1$Identity <- factor(data1$Identity, levels = c("Self", "Friend", "Stranger"))
+summary_data1 <- data1 %>%
+  group_by(Task, Identity) %>%
+  summarise(mean_error = mean(Target.ACC == 0),
+            mean_RT = mean(Target.RT),
+            sd_error = sd(Target.ACC == 0) / sqrt(n()),
+            sd_RT = sd(Target.RT) / sqrt(n()))
+
+# Read and process data for Experiment 2
+data2 <- read.csv("Wang_2016_EPHPP_Exp2_Association.csv")
+data2$Task <- "Association"
+data2$Identity <- factor(data2$Identity, levels = c("Self", "Friend", "Stranger"))
+summary_data2 <- data2 %>%
+  group_by(Task, Identity) %>%
+  summarise(mean_error = mean(Target.ACC == 0, na.rm = TRUE),
+            mean_RT = mean(Target.RT, na.rm = TRUE),
+            sd_error = sd(Target.ACC == 0) / sqrt(n()),
+            sd_RT = sd(Target.RT) / sqrt(n()))
+
+# Combine data
+summary_data <- rbind(summary_data1, summary_data2)
+
+# Custom color palette
+cbp <- ggokabeito::scale_okabe_ito(aesthetics = c("fill", "color"), order=c(2,1,7,3:6))
+
+# Combined error proportion plot
+ggplot(summary_data, aes(x = Identity, y = mean_error, fill = Task)) +
+  geom_bar(stat = "identity", color = "black", width = 0.4, position = position_dodge(width = 0.5)) +
+  geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error), 
+                width = 0.2, position = position_dodge(width = 0.5)) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  coord_cartesian(ylim = c(0, 0.4)) +
+  cbp +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Combined reaction times plot
+ggplot(summary_data, aes(x = Identity, y = mean_RT, fill = Task)) +
+  geom_bar(stat = "identity", color = "black", width = 0.4, position = position_dodge(width = 0.5)) +
+  geom_errorbar(aes(ymin = mean_RT - sd_RT, ymax = mean_RT + sd_RT), 
+                width = 0.2, position = position_dodge(width = 0.5)) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  coord_cartesian(ylim = c(500, 1050)) +
+  cbp +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(ggokabeito)
+library(dplyr)
+library(cowplot)
+
+# Read and process data for Experiment 1
+data1 <- read.csv("Wang_2016_EPHPP_Exp1_Switch.csv")
+data1$Task <- "Breaking"
+data1$Identity <- factor(data1$Identity, levels = c("Self", "Friend", "Stranger"))
+summary_data1 <- data1 %>%
+  group_by(Task, Identity) %>%
+  summarise(mean_error = mean(Target.ACC == 0),
+            mean_RT = mean(Target.RT),
+            sd_error = sd(Target.ACC == 0) / sqrt(n()),
+            sd_RT = sd(Target.RT) / sqrt(n()))
+
+# Read and process data for Experiment 2
+data2 <- read.csv("Wang_2016_EPHPP_Exp1_Association.csv")
+data2$Task <- "Association"
+data2$Identity <- factor(data2$Identity, levels = c("Self", "Friend", "Stranger"))
+summary_data2 <- data2 %>%
+  group_by(Task, Identity) %>%
+  summarise(mean_error = mean(Target.ACC == 0, na.rm = TRUE),
+            mean_RT = mean(Target.RT, na.rm = TRUE),
+            sd_error = sd(Target.ACC == 0) / sqrt(n()),
+            sd_RT = sd(Target.RT) / sqrt(n()))
+
+# Combine data and adjust Identity order to plot left to right within each group
+summary_data1 <- summary_data1 %>%
+  mutate(Identity_Task = factor(paste(Identity, "First", sep = "_"), levels = c("Self_First", "Friend_First", "Stranger_First")))
+
+summary_data2 <- summary_data2 %>%
+  mutate(Identity_Task = factor(paste(Identity, "Break", sep = "_"), levels = c("Self_Break", "Friend_Break", "Stranger_Break")))
+
+summary_data <- rbind(summary_data1, summary_data2)
+
+# Custom color palette for different identities
+cbp_identity <- ggokabeito::scale_okabe_ito(aesthetics = c("fill"), order = c(1, 2, 7))
+
+# Error proportion plot
+p1 <- ggplot(summary_data, aes(x = Identity, y = mean_error, fill = Identity)) +
+  geom_bar(stat = "identity", color = "black", width = 0.4, position = position_dodge(width = 0.5)) +
+  geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error), 
+                width = 0.2, position = position_dodge(width = 0.5)) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  facet_wrap(~ Task, scales = "free_x") +
+  coord_cartesian(ylim = c(0, 0.4)) +
+  cbp_identity +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Reaction times plot
+p2 <- ggplot(summary_data, aes(x = Identity, y = mean_RT, fill = Identity)) +
+  geom_bar(stat = "identity", color = "black", width = 0.4, position = position_dodge(width = 0.5)) +
+  geom_errorbar(aes(ymin = mean_RT - sd_RT, ymax = mean_RT + sd_RT), 
+                width = 0.2, position = position_dodge(width = 0.5)) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  facet_wrap(~ Task, scales = "free_x") +
+  coord_cartesian(ylim = c(500, 1050)) +
+  cbp_identity +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Combine the two plots
+plot_grid(p1, p2, align = "hv", ncol = 2)
+
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(ggokabeito)
+library(dplyr)
+library(cowplot)
+
+# Read and process data for Experiment 1
+data1 <- read.csv("Wang_2016_EPHPP_Exp1_Switch.csv")
+data1$Task <- "Breaking"
+data1$Identity <- factor(data1$Identity, levels = c("Self", "Friend", "Stranger"))
+summary_data1 <- data1 %>%
+  group_by(Task, Identity) %>%
+  summarise(mean_error = mean(Target.ACC == 0),
+            mean_RT = mean(Target.RT),
+            sd_error = sd(Target.ACC == 0) / sqrt(n()),
+            sd_RT = sd(Target.RT) / sqrt(n()))
+
+# Read and process data for Experiment 2
+data2 <- read.csv("Wang_2016_EPHPP_Exp1_Association.csv")
+data2$Task <- "Association"
+data2$Identity <- factor(data2$Identity, levels = c("Self", "Friend", "Stranger"))
+summary_data2 <- data2 %>%
+  group_by(Task, Identity) %>%
+  summarise(mean_error = mean(Target.ACC == 0, na.rm = TRUE),
+            mean_RT = mean(Target.RT, na.rm = TRUE),
+            sd_error = sd(Target.ACC == 0) / sqrt(n()),
+            sd_RT = sd(Target.RT) / sqrt(n()))
+
+# Combine data and adjust Identity order to plot left to right within each group
+summary_data1 <- summary_data1 %>%
+  mutate(Identity_Task = factor(paste(Identity, "First", sep = "_"), levels = c("Self_First", "Friend_First", "Stranger_First")))
+
+summary_data2 <- summary_data2 %>%
+  mutate(Identity_Task = factor(paste(Identity, "Break", sep = "_"), levels = c("Self_Break", "Friend_Break", "Stranger_Break")))
+
+summary_data <- rbind(summary_data1, summary_data2)
+
+# Custom color palette for different identities
+cbp_identity <- ggokabeito::scale_okabe_ito(aesthetics = c("fill"), order = c(1, 2, 7))
+
+# Error proportion plot
+p1 <- ggplot(summary_data, aes(x = Identity, y = mean_error, fill = Identity)) +
+  geom_bar(stat = "identity", color = "black", width = 0.3, position = position_dodge(width = 0.4)) +
+  geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error), 
+                width = 0.2, position = position_dodge(width = 0.4)) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  facet_wrap(~ Task, scales = "free_x") +
+  coord_cartesian(ylim = c(0, 0.4)) +
+  cbp_identity +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title.y = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 12, face = "bold"))
+
+# Reaction times plot
+p2 <- ggplot(summary_data, aes(x = Identity, y = mean_RT, fill = Identity)) +
+  geom_bar(stat = "identity", color = "black", width = 0.3, position = position_dodge(width = 0.4)) +
+  geom_errorbar(aes(ymin = mean_RT - sd_RT, ymax = mean_RT + sd_RT), 
+                width = 0.2, position = position_dodge(width = 0.4)) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  facet_wrap(~ Task, scales = "free_x") +
+  coord_cartesian(ylim = c(500, 1050)) +
+  cbp_identity +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title.y = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 12, face = "bold"))
+
+# Combine the two plots
+plot_grid(p1, p2, align = "hv", ncol = 2)
+
+```
+
+
+# Exp1
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(ggokabeito)
+library(dplyr)
+library(cowplot)
+
+# Read and process data for Experiment 1
+data1 <- read.csv("Wang_2016_EPHPP_Exp1_Switch.csv")
+data1$Task <- "Breaking"
+data1$Identity <- factor(data1$Identity, levels = c("Self", "Friend", "Stranger"))
+summary_data1 <- data1 %>%
+  group_by(Task, Identity) %>%
+  summarise(mean_error = mean(Target.ACC == 0),
+            mean_RT = mean(Target.RT),
+            sd_error = sd(Target.ACC == 0) / sqrt(n()),
+            sd_RT = sd(Target.RT) / sqrt(n()))
+
+# Read and process data for Experiment 2
+data2 <- read.csv("Wang_2016_EPHPP_Exp1_Association.csv")
+data2$Task <- "Association"
+data2$Identity <- factor(data2$Identity, levels = c("Self", "Friend", "Stranger"))
+summary_data2 <- data2 %>%
+  group_by(Task, Identity) %>%
+  summarise(mean_error = mean(Target.ACC == 0, na.rm = TRUE),
+            mean_RT = mean(Target.RT, na.rm = TRUE),
+            sd_error = sd(Target.ACC == 0) / sqrt(n()),
+            sd_RT = sd(Target.RT) / sqrt(n()))
+
+# Combine data and adjust Identity order to plot left to right within each group
+summary_data1 <- summary_data1 %>%
+  mutate(Identity_Task = factor(paste(Identity, "First", sep = "_"), levels = c("Self_First", "Friend_First", "Stranger_First")))
+
+summary_data2 <- summary_data2 %>%
+  mutate(Identity_Task = factor(paste(Identity, "Break", sep = "_"), levels = c("Self_Break", "Friend_Break", "Stranger_Break")))
+
+summary_data <- rbind(summary_data1, summary_data2)
+
+# Custom color palette for different identities
+cbp_identity <- ggokabeito::scale_okabe_ito(aesthetics = c("fill"), order = c(1, 2, 7))
+
+# Error proportion plot
+p1 <- ggplot(summary_data, aes(x = Identity, y = mean_error, fill = Identity)) +
+  geom_col(color = "black", width = 0.35, position = position_dodge(width = 0.4)) +
+  geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error), 
+                width = 0.2, position = position_dodge(width = 0.4)) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  facet_grid(~ Task, scales = "free_x") +
+  coord_cartesian(ylim = c(0, 0.4)) +
+  cbp_identity +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title.y = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 12, face = "bold"))
+
+# Reaction times plot
+p2 <- ggplot(summary_data, aes(x = Identity, y = mean_RT, fill = Identity)) +
+  geom_col(color = "black", width = 0.35, position = position_dodge(width = 0.4)) +
+  geom_errorbar(aes(ymin = mean_RT - sd_RT, ymax = mean_RT + sd_RT), 
+                width = 0.2, position = position_dodge(width = 0.4)) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  facet_grid(~ Task, scales = "free_x") +
+  coord_cartesian(ylim = c(500, 1050)) +
+  cbp_identity +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title.y = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 12, face = "bold"))
+
+# Combine the two plots
+plot_grid(p1, p2, align = "hv", ncol = 2)
+
+```
+
+# Exp2
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(ggokabeito)
+library(dplyr)
+library(cowplot)
+
+# Read and process data for Experiment 1
+data1 <- read.csv("Wang_2016_EPHPP_Exp2_Switch.csv")
+data1$Task <- "Breaking"
+data1$Identity <- factor(data1$Identity, levels = c("Self", "Friend", "Stranger"))
+summary_data1 <- data1 %>%
+  group_by(Task, Identity) %>%
+  summarise(mean_error = mean(Target.ACC == 0),
+            mean_RT = mean(Target.RT),
+            sd_error = sd(Target.ACC == 0) / sqrt(n()),
+            sd_RT = sd(Target.RT) / sqrt(n()))
+
+# Read and process data for Experiment 2
+data2 <- read.csv("Wang_2016_EPHPP_Exp2_Association.csv")
+data2$Task <- "Association"
+data2$Identity <- factor(data2$Identity, levels = c("Self", "Friend", "Stranger"))
+summary_data2 <- data2 %>%
+  group_by(Task, Identity) %>%
+  summarise(mean_error = mean(Target.ACC == 0, na.rm = TRUE),
+            mean_RT = mean(Target.RT, na.rm = TRUE),
+            sd_error = sd(Target.ACC == 0) / sqrt(n()),
+            sd_RT = sd(Target.RT) / sqrt(n()))
+
+# Combine data and adjust Identity order to plot left to right within each group
+summary_data1 <- summary_data1 %>%
+  mutate(Identity_Task = factor(paste(Identity, "First", sep = "_"), levels = c("Self_First", "Friend_First", "Stranger_First")))
+
+summary_data2 <- summary_data2 %>%
+  mutate(Identity_Task = factor(paste(Identity, "Break", sep = "_"), levels = c("Self_Break", "Friend_Break", "Stranger_Break")))
+
+summary_data <- rbind(summary_data1, summary_data2)
+
+# Custom color palette for different identities
+cbp_identity <- ggokabeito::scale_okabe_ito(aesthetics = c("fill"), order = c(1, 2, 7))
+
+# Error proportion plot
+p1 <- ggplot(summary_data, aes(x = Identity, y = mean_error, fill = Identity)) +
+  geom_col(color = "black", width = 0.35, position = position_dodge(width = 0.4)) +
+  geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error), 
+                width = 0.2, position = position_dodge(width = 0.4)) +
+  labs(x = "Identity", y = "Proportion of Error Responses") +
+  facet_grid(~ Task, scales = "free_x") +
+  coord_cartesian(ylim = c(0, 0.4)) +
+  cbp_identity +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title.y = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 12, face = "bold"))
+
+# Reaction times plot
+p2 <- ggplot(summary_data, aes(x = Identity, y = mean_RT, fill = Identity)) +
+  geom_col(color = "black", width = 0.35, position = position_dodge(width = 0.4)) +
+  geom_errorbar(aes(ymin = mean_RT - sd_RT, ymax = mean_RT + sd_RT), 
+                width = 0.2, position = position_dodge(width = 0.4)) +
+  labs(x = "Identity", y = "Reaction Times (ms)") +
+  facet_grid(~ Task, scales = "free_x") +
+  coord_cartesian(ylim = c(500, 1050)) +
+  cbp_identity +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title.y = element_text(size = 12, face = "bold"),
+        axis.title.x = element_text(size = 12, face = "bold"),
+        strip.text = element_text(size = 12, face = "bold"))
+
+# Combine the two plots
+plot_grid(p1, p2, align = "hv", ncol = 2)
+
+```
