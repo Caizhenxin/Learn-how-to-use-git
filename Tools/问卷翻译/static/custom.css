@@ -1,0 +1,45 @@
+.flex-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.grid {
+    display: grid;
+}
+
+label, input, button {
+    margin: 5px;
+}
+
+button {
+    background-color: #D5ED9F;
+    color: black;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button.important {
+    background-color: #4CAF50;
+    color: white;
+}
+
+h3 {
+    color: #FF9100;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+.small-button {
+    padding: 5px 5px;
+    background-color: #555555;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
