@@ -1,0 +1,71 @@
+---
+title: "Clean_Data"
+author: "czx"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+# 设置工作目录
+setwd("D:/GitHub_programe/GitHub/Learn-how-to-use-git/R/Data10")
+
+# 列出文件夹中所有 .csv 文件
+file_list <- list.files(path = getwd(), pattern = "*.csv", full.names = TRUE)
+
+# 初始化一个空列表存储提取成功的数据
+data_list <- list()
+
+# 初始化一个向量记录出错的文件
+error_files <- c()
+
+# 循环读取每个文件并提取指定列
+for (file in file_list) {
+  cat("正在处理文件：", basename(file), "...\n")
+  
+  # 尝试读取和提取数据
+  tryCatch({
+    # 读取文件
+    data <- read.csv(file, header = TRUE)
+    
+    # 检查目标列是否存在
+    required_columns <- c("Subject", "Matching", "Identity", "RT_ms", "RT_sec", "ACC", "Country")
+    if (!all(required_columns %in% colnames(data))) {
+      stop("缺少列：", paste(setdiff(required_columns, colnames(data)), collapse = ", "))
+    }
+    
+    # 提取指定列
+    selected_data <- data[, required_columns]
+    
+    # 添加文件来源信息（可选）
+    selected_data$SourceFile <- basename(file)
+    
+    # 存入列表
+    data_list[[file]] <- selected_data
+  }, error = function(e) {
+    # 捕获错误并记录文件名
+    cat("文件出错：", basename(file), "，原因：", conditionMessage(e), "\n")
+    error_files <<- c(error_files, basename(file))
+  })
+}
+
+# 合并成功提取的数据
+combined_data <- do.call(rbind, data_list)
+
+# 检查合并结果
+cat("合并后的数据结构：\n")
+print(str(combined_data))
+
+# 保存合并后的数据到 .csv 文件
+write.csv(combined_data, file = "filtered_combined_data.csv", row.names = FALSE)
+cat("指定列的数据已提取，并保存为 filtered_combined_data.csv。\n")
+
+# 输出出错的文件列表
+if (length(error_files) > 0) {
+  cat("以下文件由于缺少列或其他原因未被处理：\n")
+  print(error_files)
+} else {
+  cat("所有文件均成功处理。\n")
+}
+
+```
+

@@ -1,0 +1,250 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+# 加载必要的包
+library(car)
+library(dplyr)
+library(ggplot2)
+
+# 读取数据
+data <- read.csv("filtered_combined_data.csv")
+
+# 检查数据结构
+str(data)
+
+# 确保变量是因子类型
+data$Matching <- factor(data$Matching, levels = c("Matching", "Nonmatching"))
+data$Identity <- factor(data$Identity, levels = c("Self", "Close", "Stranger", "Other", "NonPerson"))
+data$Country <- factor(data$Country, levels = c("China", "Germany", "United Kingdom"))
+
+# 排除极端值（RT_ms 低于 200 ms 或高于 3000 ms）
+data <- data %>% filter(RT_ms >= 200 & RT_ms <= 3000)
+
+# 描述性统计（清理后）
+cat("清理后数据的描述性统计：\n")
+summary_data <- data %>%
+  group_by(Matching, Identity, Country) %>%
+  summarise(
+    Mean_RT = mean(RT_ms),
+    SD_RT = sd(RT_ms),
+    N = n()
+  )
+print(summary_data)
+
+# 主效应分析（ANOVA）
+main_effect_model <- aov(RT_ms ~ Matching + Identity + Country, data = data)
+cat("主效应分析结果：\n")
+print(summary(main_effect_model))
+
+# 主效应交互作用分析
+interaction_model <- aov(RT_ms ~ Matching * Identity * Country, data = data)
+cat("交互作用分析结果：\n")
+print(summary(interaction_model))
+
+# 交互作用可视化
+interaction_plot <- ggplot(data, aes(x = Identity, y = RT_ms, color = Matching, group = Matching)) +
+  geom_point(alpha = 0.6, position = position_jitter(width = 0.1)) +
+  geom_line(aes(linetype = Country)) +
+  facet_wrap(~ Country) +
+  labs(
+    title = "交互作用：Matching、Identity 和 Country 对 RT_ms 的影响（清理极端值后）",
+    x = "Identity",
+    y = "RT_ms (ms)"
+  ) +
+  theme_minimal()
+
+# 保存图像
+ggsave("interaction_plot_cleaned.png", plot = interaction_plot)
+
+# 显示图像
+print(interaction_plot)
+
+# 提示完成
+cat("主效应和交互作用分析已完成，并保存了交互作用图像（清理极端值后）。\n")
+
+```
+
+
+```{r}
+# 加载必要的包
+library(car)
+library(dplyr)
+library(ggplot2)
+
+# 读取数据
+data <- read.csv("filtered_combined_data.csv")
+
+# 检查数据结构
+str(data)
+
+# 确保变量是因子类型
+data$Matching <- factor(data$Matching, levels = c("Matching", "Nonmatching"))
+data$Identity <- factor(data$Identity, levels = c("Self", "Close", "Stranger", "Other", "NonPerson"))
+data$Country <- factor(data$Country, levels = c("China", "Germany", "United Kingdom"))
+
+# 排除极端值（RT_ms 低于 200 ms 或高于 3000 ms）
+data <- data %>% filter(RT_ms >= 200 & RT_ms <= 3000)
+
+# 描述性统计（清理后）
+cat("清理后数据的描述性统计：\n")
+summary_data <- data %>%
+  group_by(Matching, Identity, Country) %>%
+  summarise(
+    Mean_RT = mean(RT_ms),
+    SD_RT = sd(RT_ms),
+    N = n()
+  )
+print(summary_data)
+
+# 主效应分析（ANOVA）
+main_effect_model <- aov(RT_ms ~ Matching + Identity + Country, data = data)
+cat("主效应分析结果：\n")
+print(summary(main_effect_model))
+
+# 主效应交互作用分析
+interaction_model <- aov(RT_ms ~ Matching * Identity * Country, data = data)
+cat("交互作用分析结果：\n")
+print(summary(interaction_model))
+
+# 交互作用可视化（按 Matching 分面）
+interaction_plot <- ggplot(data, aes(x = Identity, y = RT_ms, color = Country, group = Country)) +
+  geom_point(alpha = 0.6, position = position_jitter(width = 0.1)) +
+  geom_line(aes(linetype = Country)) +
+  facet_wrap(~ Matching) +  # 按 Matching 列分面
+  labs(
+    title = "交互作用：Matching、Identity 和 Country 对 RT_ms 的影响（清理极端值后）",
+    x = "Identity",
+    y = "RT_ms (ms)"
+  ) +
+  theme_minimal()
+
+# 保存图像
+ggsave("interaction_plot_separated.png", plot = interaction_plot)
+
+# 显示图像
+print(interaction_plot)
+
+# 提示完成
+cat("主效应和交互作用分析已完成，并保存了分开的交互作用图像。\n")
+
+```
+
+## Loading Package
+```{r}
+# 加载必要的包
+library(brms)
+library(car)
+library(dplyr)
+library(ggplot2)
+library(broom)
+
+```
+
+## 数据清洗
+```{r}
+# 读取数据
+data <- read.csv("filtered_combined_data.csv")
+
+# 检查缺失值
+summary(data)
+
+# 删除缺失值
+data <- na.omit(data)
+
+# 排除极端值（RT_ms 低于 200 ms 或高于 3000 ms）
+data <- data %>% filter(RT_ms >= 200 & RT_ms <= 3000)
+# 排除 ACC 的非 0 或 1 值
+data <- data %>% filter(ACC %in% c(0, 1))
+
+# 确保变量是因子类型
+data$Matching <- factor(data$Matching, levels = c("Matching", "Nonmatching"))
+data$Identity <- factor(data$Identity, levels = c("Self", "Close", "Stranger", "Other", "NonPerson"))
+data$Country <- factor(data$Country, levels = c("China", "Germany", "United Kingdom"))
+data$ACC <- as.factor(data$ACC)
+
+# 计算每个被试在不同Identity和Matching下的平均反应时间
+subject_avg_RT <- aggregate(RT_ms ~ Subject + Identity + Matching, data = data, FUN = mean)
+
+# 合并回原始数据
+data <- merge(data, subject_avg_RT, by = c("Subject", "Identity", "Matching"), suffixes = c("", "_avg"))
+
+```
+
+## 数据分析
+### RT
+```{r}
+# 构建贝叶斯层级模型：反应时间
+model_RT <- brm(
+  RT_ms ~ Matching * Identity * Country + (1|Subject),  # 交互效应和随机效应
+  data = data,
+  family = gaussian(),  # 假设反应时间服从正态分布
+  prior = c(
+    prior(normal(0, 10), class = "b"),  # 固定效应的先验
+    prior(normal(0, 5), class = "sd")  # 随机效应的先验
+  ),
+  chains = 4,  # 使用4条链进行采样
+  iter = 2000,  # 采样2000次
+  warmup = 1000,  # 前1000次为热身期
+  control = list(adapt_delta = 0.95)  # 控制采样精度
+)
+
+# 查看模型结果
+summary(model_RT)
+
+```
+
+### ACC
+```{r}
+# 构建贝叶斯层级模型：错误率（ACC）
+model_ACC <- brm(
+  ACC ~ Matching * Identity * Country + (1 | Subject),  # 交互效应和随机效应
+  data = data,
+  family = bernoulli(),  # 使用二项分布
+  prior = c(
+    prior(normal(0, 10), class = "b"),  # 固定效应的先验
+    prior(normal(0, 5), class = "sd")  # 随机效应的先验
+  ),
+  chains = 4,  # 使用4条链进行采样
+  iter = 2000,  # 采样2000次
+  warmup = 1000,  # 前1000次为热身期
+  control = list(adapt_delta = 0.95)  # 控制采样精度
+)
+
+# 查看模型结果
+summary(model_ACC)
+```
+
+```{r}
+# 提取固定效应的系数
+coefficients <- as.data.frame(fixef(model_ACC))
+
+# 保存为 CSV
+write.csv(coefficients, "model_ACC_coefficients.csv", row.names = TRUE)
+
+```
+
+
+```{r}
+# 提取固定效应的系数
+coefficients <- as.data.frame(fixef(model_RT))
+
+# 保存为 CSV
+write.csv(coefficients, "model_RT_coefficients.csv", row.names = TRUE)
+```
+
+```{r}
+# 绘制反应时间（RT_ms）的交互效应图
+plot(conditional_effects(model_RT, effects = "Matching:Identity:Country"),
+     points = TRUE,  # 在图中显示原始数据点
+     theme = theme_minimal())  # 设定简洁的主题
+
+# 绘制准确率（ACC）的交互效应图
+plot(conditional_effects(model_ACC, effects = "Matching:Identity:Country"),
+     points = TRUE,
+     theme = theme_minimal())
+
+```
+

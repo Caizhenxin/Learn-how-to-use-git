@@ -1,0 +1,66 @@
+# Byte-compiled / optimized / DLL files
+BayesianModellingPythonBookCode_Ed1/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+.jupyter/
+.pytensor/
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+Include/
+Lib/
+Scripts/
+pyvenv.cfg
+share/
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.npm/
+.cache/
+
+# Rope project settings
+.ropeproject
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+.DS_Store
+*/.DS_Store
+
+# IDEs
+.vscode
+
+_build
+.idea/
+
+# MacOS files for offices
+.DS_Store
+*._*
+
+# custom grocery
+作业
+other
+
+*.sync.ffs_db
+
+panNote.md
+
+教学大纲*/

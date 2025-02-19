@@ -1,0 +1,259 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+# 1. 加载数据
+# 请确保路径正确，并且CSV文件格式正确
+data <- read.csv("C:/Users/蔡振辛/Desktop/课程作业/贝叶斯/Data/3_raw_IAT_JP.csv")
+
+# 2. 过滤出正确响应的数据
+data_correct <- subset(data, corr == 1 & rt > 200)   # 只选择正确响应的行
+# data_correct <- data
+```
+
+
+# 日本
+```{r}
+# 1. 加载数据
+# 请确保路径正确，并且CSV文件格式正确
+data <- read.csv("C:/Users/蔡振辛/Desktop/课程作业/贝叶斯/Data/3_raw_IAT_JP.csv")
+
+# 2. 过滤出正确响应的数据
+data_correct <- subset(data, corr == 1 & rt > 200)   # 只选择正确响应的行
+# data_correct <- data
+
+  
+# 3. 计算每个条件下的平均反应时间
+# 假设 "Matching" 列包含 "Matching" 和 "Nonmatching" 两种条件
+avg_rt_matching <- mean(data_correct$rt[data_correct$Matching == "Matching"])
+avg_rt_nonmatching <- mean(data_correct$rt[data_correct$Matching == "Nonmatching"])
+
+# 4. 计算每个条件的标准差
+sd_matching <- sd(data_correct$rt[data_correct$Matching == "Matching"])
+sd_nonmatching <- sd(data_correct$rt[data_correct$Matching == "Nonmatching"])
+
+# 5. 计算反应时间差异
+rt_difference <- avg_rt_matching - avg_rt_nonmatching
+
+# 6. 计算IAT得分（标准化）
+# 我们取两个条件的平均标准差作为标准化的标准
+avg_sd <- mean(c(sd_matching, sd_nonmatching))
+
+# 计算IAT得分
+IAT_score <- rt_difference / avg_sd
+
+# 输出IAT得分
+cat("IAT得分：", IAT_score, "\n")
+
+# 7. 如果你想为每个参与者计算IAT得分，可以使用dplyr包分组
+library(dplyr)
+
+IAT_scores <- data_correct %>%
+  group_by(participant) %>%
+  summarise(
+    avg_rt_matching = mean(rt[Matching == "Matching"]),
+    avg_rt_nonmatching = mean(rt[Matching == "Nonmatching"]),
+    sd_matching = sd(rt[Matching == "Matching"]),
+    sd_nonmatching = sd(rt[Matching == "Nonmatching"]),
+    IAT_score = (mean(rt[Matching == "Matching"]) - mean(rt[Matching == "Nonmatching"])) / 
+                mean(c(sd(rt[Matching == "Matching"]), sd(rt[Matching == "Nonmatching"])))
+  )
+
+# 8. 查看每个参与者的IAT得分
+print(IAT_scores)
+
+# 可以将IAT得分输出到csv文件或进一步分析
+write.csv(IAT_scores, "IAT_scores_Japan.csv")
+
+```
+
+
+```{r}
+# 1. 加载数据
+# 请确保路径正确，并且CSV文件格式正确
+data <- read.csv("C:/Users/蔡振辛/Desktop/课程作业/贝叶斯/Data/3_raw_IAT_JP.csv")
+
+# 2. 过滤出正确响应的数据
+# data_correct <- subset(data, corr == 1)  # 只选择正确响应的行
+data_correct <- data
+  
+# 3. 计算每个条件下的平均反应时间
+# 假设 "Matching" 列包含 "Matching" 和 "Nonmatching" 两种条件
+avg_rt_matching <- mean(data_correct$rt[data_correct$Matching == "Matching"])
+avg_rt_nonmatching <- mean(data_correct$rt[data_correct$Matching == "Nonmatching"])
+
+# 4. 计算每个条件的标准差
+sd_matching <- sd(data_correct$rt[data_correct$Matching == "Matching"])
+sd_nonmatching <- sd(data_correct$rt[data_correct$Matching == "Nonmatching"])
+
+# 5. 计算反应时间差异
+rt_difference <- avg_rt_matching - avg_rt_nonmatching
+
+# 6. 计算IAT得分（标准化）
+# 我们取两个条件的平均标准差作为标准化的标准
+avg_sd <- mean(c(sd_matching, sd_nonmatching))
+
+# 计算IAT得分
+IAT_score <- rt_difference / avg_sd
+
+# 输出IAT得分
+cat("IAT得分：", IAT_score, "\n")
+```
+
+
+# Matching - Nonmatching
+```{r}
+library(dplyr)
+
+IAT_scores <- data_correct %>%
+  group_by(participant) %>%
+  summarise(
+    avg_rt_matching = mean(rt[Matching == "Matching"]),
+    avg_rt_nonmatching = mean(rt[Matching == "Nonmatching"]),
+    sd_matching = sd(rt[Matching == "Matching"]),
+    sd_nonmatching = sd(rt[Matching == "Nonmatching"]),
+    IAT_score = (avg_rt_nonmatching - avg_rt_matching) / 
+                mean(c(sd_matching, sd_nonmatching))
+  )
+
+# 查看每个参与者的IAT得分
+print(IAT_scores)
+
+# 可以将IAT得分输出到csv文件或进一步分析
+write.csv(IAT_scores, "IAT_scores_Japan.csv")
+```
+
+
+# Nonmatching - Matching
+```{r}
+library(dplyr)
+
+IAT_scores <- data_correct %>%
+  group_by(participant) %>%
+  summarise(
+    avg_rt_matching = mean(rt[Matching == "Matching"]),
+    avg_rt_nonmatching = mean(rt[Matching == "Nonmatching"]),
+    sd_matching = sd(rt[Matching == "Matching"]),
+    sd_nonmatching = sd(rt[Matching == "Nonmatching"]),
+    IAT_score = (avg_rt_nonmatching - avg_rt_matching) / 
+                mean(c(sd_matching, sd_nonmatching))
+  )
+
+# 查看每个参与者的IAT得分
+print(IAT_scores)
+
+# 可以将IAT得分输出到csv文件或进一步分析
+write.csv(IAT_scores, "IAT_scores_Japan.csv")
+```
+
+
+
+
+# 意大利
+```{r}
+# 1. 加载数据
+# 请确保路径正确，并且CSV文件格式正确
+data <- read.csv("C:/Users/蔡振辛/Desktop/课程作业/贝叶斯/Data/3_raw_IAT_IT.csv")
+
+# 2. 过滤出正确响应的数据
+data_correct <- subset(data,rt > 300)  # 只选择正确响应的行
+
+# # 3. 计算每个条件下的平均反应时间
+# # 假设 "Matching" 列包含 "Matching" 和 "Nonmatching" 两种条件
+# avg_rt_matching <- mean(data_correct$rt[data_correct$Matching == "Matching"])
+# avg_rt_nonmatching <- mean(data_correct$rt[data_correct$Matching == "Nonmatching"])
+# 
+# # 4. 计算每个条件的标准差
+# sd_matching <- sd(data_correct$rt[data_correct$Matching == "Matching"])
+# sd_nonmatching <- sd(data_correct$rt[data_correct$Matching == "Nonmatching"])
+# 
+# # 5. 计算反应时间差异
+# rt_difference <- avg_rt_matching - avg_rt_nonmatching
+# 
+# # 6. 计算IAT得分（标准化）
+# # 我们取两个条件的平均标准差作为标准化的标准
+# avg_sd <- mean(c(sd_matching, sd_nonmatching))
+# 
+# # 计算IAT得分
+# IAT_score <- rt_difference / avg_sd
+
+# # 输出IAT得分
+# cat("IAT得分：", IAT_score, "\n")
+
+# 7. 如果你想为每个参与者计算IAT得分，可以使用dplyr包分组
+library(dplyr)
+
+IAT_scores <- data_correct %>%
+  group_by(participant) %>%
+  summarise(
+    avg_rt_matching = mean(rt[Matching == "Matching"]),
+    avg_rt_nonmatching = mean(rt[Matching == "Nonmatching"]),
+    sd_matching = sd(rt[Matching == "Matching"]),
+    sd_nonmatching = sd(rt[Matching == "Nonmatching"]),
+    IAT_score = (mean(rt[Matching == "Matching"]) - mean(rt[Matching == "Nonmatching"])) /
+                mean(c(sd(rt[Matching == "Matching"]), sd(rt[Matching == "Nonmatching"])))
+  )
+
+# 8. 查看每个参与者的IAT得分
+print(IAT_scores)
+
+# 可以将IAT得分输出到csv文件或进一步分析
+write.csv(IAT_scores, "IAT_scores_Italy.csv")
+
+```
+
+
+# 日本
+```{r}
+# 1. 加载数据
+# 请确保路径正确，并且CSV文件格式正确
+data <- read.csv("C:/Users/蔡振辛/Desktop/课程作业/贝叶斯/Data/3_raw_IAT_JP.csv")
+
+# 2. 过滤出正确响应的数据
+data_correct <- subset(data,rt > 300)  # 只选择正确响应的行
+
+# # 3. 计算每个条件下的平均反应时间
+# # 假设 "Matching" 列包含 "Matching" 和 "Nonmatching" 两种条件
+# avg_rt_matching <- mean(data_correct$rt[data_correct$Matching == "Matching"])
+# avg_rt_nonmatching <- mean(data_correct$rt[data_correct$Matching == "Nonmatching"])
+# 
+# # 4. 计算每个条件的标准差
+# sd_matching <- sd(data_correct$rt[data_correct$Matching == "Matching"])
+# sd_nonmatching <- sd(data_correct$rt[data_correct$Matching == "Nonmatching"])
+# 
+# # 5. 计算反应时间差异
+# rt_difference <- avg_rt_matching - avg_rt_nonmatching
+# 
+# # 6. 计算IAT得分（标准化）
+# # 我们取两个条件的平均标准差作为标准化的标准
+# avg_sd <- mean(c(sd_matching, sd_nonmatching))
+# 
+# # 计算IAT得分
+# IAT_score <- rt_difference / avg_sd
+# 
+# # 输出IAT得分
+# cat("IAT得分：", IAT_score, "\n")
+
+# 7. 如果你想为每个参与者计算IAT得分，可以使用dplyr包分组
+library(dplyr)
+
+IAT_scores <- data_correct %>%
+  group_by(participant) %>%
+  summarise(
+    avg_rt_matching = mean(rt[Matching == "Matching"]),
+    avg_rt_nonmatching = mean(rt[Matching == "Nonmatching"]),
+    sd_matching = sd(rt[Matching == "Matching"]),
+    sd_nonmatching = sd(rt[Matching == "Nonmatching"]),
+    IAT_score = (mean(rt[Matching == "Matching"]) - mean(rt[Matching == "Nonmatching"])) /
+                mean(c(sd(rt[Matching == "Matching"]), sd(rt[Matching == "Nonmatching"])))
+  )
+
+# 8. 查看每个参与者的IAT得分
+print(IAT_scores)
+
+# 可以将IAT得分输出到csv文件或进一步分析
+write.csv(IAT_scores, "IAT_scores_Japan.csv")
+
+```
