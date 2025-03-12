@@ -1,0 +1,3465 @@
+---
+title: "1_Clean_Data"
+author: "czx"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Tools in coding
+## Variation 变量名称查询工具
+```{r}
+# 设置工作目录，即文件所在的文件夹
+setwd("D:/GitHub_programe/GitHub/SPE_Database/3_Code")
+
+# 读取CSV文件
+data <- read.csv("../2_Raw_Data/Dalmaso_2024_CC/Dalmaso_2024_CC_Exp1_raw.csv")
+
+# 打印变量名称
+print(names(data))
+```
+
+## Matlab tools
+```{r Matlab小工具}
+# Read MATLAB .mat
+
+read.mat <- function(list) {
+  
+  res <- list()
+  
+  for (i in 1:length(list)) {
+    
+    list_mat <- list[[i]]
+    
+    # 提取人口统计学变量
+    age <- list_mat$age
+    han <- list_mat$han
+    sex <- list_mat$sex
+    
+    # 提取反应时间（RT）数据
+    df_rt <- data.frame(
+      RT_1 = list_mat$TestRt[,1],
+      RT_2 = list_mat$TestRt[,2],
+      RT_3 = list_mat$TestRt[,3],
+      RT_4 = list_mat$TestRt[,4]
+    ) %>%
+    tidyr::pivot_longer(
+      cols = starts_with("RT_"),
+      names_to = "Block",
+      names_prefix = "RT_",
+      values_to = "RT"
+    ) 
+    
+    # 提取准确率（ACC）数据
+    df_acc <- data.frame(
+      ACC_1 = list_mat$Correct[, 1],
+      ACC_2 = list_mat$Correct[, 2],
+      ACC_3 = list_mat$Correct[, 3],
+      ACC_4 = list_mat$Correct[, 4]
+    ) %>%
+    tidyr::pivot_longer(
+      cols = starts_with("ACC_"),
+      names_to = "Block",
+      names_prefix = "ACC_",
+      values_to = "ACC"
+    ) %>%
+    dplyr::select(-Block)
+    
+    # 提取形状（Shape）数据
+    df_sha <- data.frame(
+      Shape_1 = list_mat$Tshape[, 1],
+      Shape_2 = list_mat$Tshape[, 2],
+      Shape_3 = list_mat$Tshape[, 3],
+      Shape_4 = list_mat$Tshape[, 4]
+    ) %>%
+    tidyr::pivot_longer(
+      cols = starts_with("Shape_"),
+      names_to = "Block",
+      names_prefix = "Shape_",
+      values_to = "Shape"
+    ) %>%
+    dplyr::select(-Block)
+    
+    # 提取标签（Label）数据
+    df_lab <- data.frame(
+      Label_1 = list_mat$Tlabel[, 1],
+      Label_2 = list_mat$Tlabel[, 2],
+      Label_3 = list_mat$Tlabel[, 3],
+      Label_4 = list_mat$Tlabel[, 4]
+    ) %>%
+    tidyr::pivot_longer(
+      cols = starts_with("Label_"),
+      names_to = "Block",
+      names_prefix = "Label_",
+      values_to = "Label"
+    ) %>%
+    dplyr::select(-Block)
+    
+    # 创建主数据框，包括人口统计学变量
+    df_mat <- data.frame(
+      Subject = list_mat$num,
+      Session = list_mat$ses,
+      Age = age,  # 添加年龄变量
+      Hand = han,  # 添加汉字变量
+      sex = sex,
+      df_sha, df_lab,
+      df_rt, df_acc
+    )
+    
+    res[[i]] <- df_mat
+  }
+
+  # 合并所有数据框
+  df <- do.call(rbind, res)
+
+  return(df)
+}
+```
+
+
+# Clean Coding
+# Loading package
+```{r Package, warning = FALSE,message = FALSE}
+# clean data
+library(tidyr)
+library(dplyr)
+library(stringr)
+```
+
+# Initial Data.Frame List
+```{r Data.Frame List}
+df <- list()
+```
+
+# MerrynD.Constable_2020_AP
+## Experiment 1 (Identity = 3)
+"Self", "Partner", "Stranger"
+```{r Paper p6 Experiment 1}
+df[[1]] <- read.csv(
+  "../2_Raw_Data/Constable_2020_AP/Constable_2020_AP_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Pair.Number,
+    Age_Participant1 = Participant.1.Age,
+    Age_Participant2 = Participant.2.Age,
+    Shape = Shape,
+    Origin_Identity = Label,
+    ShapeLoc = ShapeLoc,
+    StrangerShape = StrangerShape,
+    P1Shape = P1Shape,
+    P2Shape = P2Shape,    
+    Matching = Condition,
+    RT_sec = rt,
+    ACC = corr,
+    Phase = Phase,
+    Response = resp
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "Match" ~ "Matching",
+      Matching == "Mismatch" ~ "Nonmatching"
+    ),
+    RT_sec = as.numeric(RT_sec),
+    RT_ms = RT_sec * 1000,
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    ShapeLoc = as.factor(ShapeLoc),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Age_Participant1, Age_Participant2, 
+    StrangerShape, P1Shape, P2Shape, 
+    Shape, Matching, Origin_Identity, ShapeLoc, 
+    Response, RT_ms, RT_sec, ACC, Phase
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, ShapeLoc
+  )
+
+names(df)[1] <- "Constable_2020_AP Exp 1"
+summary(df[[1]])
+write.csv(x = df[[1]], file = "../1_Clean_Data/Constable_2020_AP/Constable_2020_AP_Exp1_Clean.csv")
+```
+
+# Merryn Dale Constable_2020_CE
+## Experiment 1 (Identity = 2)
+"Self", "Stranger"    →   "Self","Stranger"
+```{r Paper p46 Experiment 1}
+df[[2]] <- read.csv(
+  "../2_Raw_Data/Constable_2020_CE/Exp1/Constable_2020_CE_Exp1_raw.csv"
+  ) %>%
+  # 选择可以分析的列
+  dplyr::select(
+    Subject = X1..Participant.Number,
+    Handedness = X4..Handedness,
+    Age = X3..Age,
+    Gender = X2..Gender..M.F.,
+    First_Lanugage = X5..First.Lanugage,
+    Shape = Shape,
+    Origin_Identity = Label,
+    English_Identity = Label,
+    Matching = Condition,
+    Response = resp,
+    Colour = Colour,
+    ShapeColour = ShapeColour,
+    textColour = textColour,
+    ShapeLoc = ShapeLoc,
+    Stimuli_Type = X6..Stimuli.Type.Self...Positive.Self...Negative.,
+    RT_sec = rt,
+    ACC = corr,
+    Block = Block,
+    Trial = trialinBlock
+  ) %>%
+  # 转化为标准化的名称
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "Match" ~ "Matching",
+      Matching == "Mismatch" ~ "Nonmatching"),
+    RT_sec = as.numeric(RT_sec),
+    RT_ms = RT_sec * 1000,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Stranger" ~ "Stranger"
+    ),
+  ) %>%
+  # 统一变量的属性
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Block, Trial, Gender, Age, Handedness, First_Lanugage,
+    Shape, Matching, Origin_Identity, English_Identity, Standarlized_Identity, Standarlized_Identity,Response, ShapeLoc, Colour,
+    ShapeColour, textColour,Stimuli_Type, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Block
+  )
+names(df)[2] <- "Constable_2020_CE Exp 1"
+summary(df[[2]])
+write.csv(x = df[[2]], file = "../1_Clean_Data/Constable_2020_CE/Constable_2020_CE_Exp1_Clean.csv")
+```
+
+# Merryn Dale Constable_2020_CE (Dark Light Box)
+## Experiment 2 (Identity = 2)
+"Self", "Stranger"    →   "Self","Stranger"
+```{r Paper p46 Experiment 2}
+df[[3]] <- read.csv(
+  "../2_Raw_Data/Constable_2020_CE/Exp2/Constable_2020_CE_Exp2_raw.csv"
+  ) %>%
+  # 选择可以分析的列
+  dplyr::select(
+    Subject = Subject,
+    Handedness = X4..Handedness,
+    Age = X3..Age,
+    Gender = X2..Gender,
+    First_Lanugage = X5..First.Language,
+    Shape = Shape,
+    Origin_Identity = Label,
+    English_Identity = Label,
+    Matching = Condition,
+    FaceIdentity = FaceIdentity,
+    Stimulus = Stimulus,
+    Strength = Strength,
+    Response = resp,
+    textColour = textColour,
+    ShapeLoc = ShapeLoc,
+    Stimuli_Type = X6..Stimuli.Type..Self...Negative.Self...Positive.,
+    RT_sec = rt,
+    ACC = corr,
+    Block = Block,
+    Trial = trialinBlock
+  ) %>%
+  # 转化为标准化的名称
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "Match" ~ "Matching",
+      Matching == "Mismatch" ~ "Nonmatching"),
+    RT_sec = as.numeric(RT_sec),
+    RT_ms = RT_sec * 1000,
+  ) %>%
+  # 统一变量的属性
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Stranger" ~ "Stranger"
+    ),
+  ) %>%
+  dplyr::select(
+    Subject, Block, Trial, Gender, Age, Handedness, First_Lanugage,
+    Shape, Matching, Origin_Identity, English_Identity, Standarlized_Identity,Response, ShapeLoc, FaceIdentity, Stimulus,
+    Strength, textColour, Stimuli_Type, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Block
+  )
+
+names(df)[3] <- "Constable_2020_CE Exp 2"
+summary(df[[3]])
+write.csv(x = df[[3]], file = "../1_Clean_Data/Constable_2020_CE/Constable_2020_CE_Exp2_Clean.csv")
+```
+
+# Haoyue Qian_2019_QJEP 
+## Experiment 1 (Identity = 3)
+"Self", "Familiar"("Celebrity"), "Stranger"   →   "Self","Celebrity","Stranger" （No  trial message)
+```{r Paper p51 Experiment 1}
+df[[4]] <- read.csv(
+  "../2_Raw_Data/Qian_2019_QJEP/Qian_2019_QJEP_Exp1_raw.csv"
+  ) %>%
+  tidyr::separate(
+    condition,
+    into = c("Identity", "Match"),
+    sep = "-shape_"
+  ) %>%
+  dplyr::mutate(
+    Identity = case_when(
+      Identity == "Self" ~ "Self",
+      Identity == "Familiar" ~ "Celebrity",
+      Identity == "Stranger" ~ "Stranger"
+    ),
+    Matching = case_when(
+      Match == "Matched" ~ "Matching",
+      Match == "Mismatched" ~ "Nonmatching"
+    ),
+    Session = Session,
+    Mood = mood,
+    Age = Age,
+    Gender = Sex,
+    RT_ms = as.numeric(respond3.RT),
+    RT_sec = RT_ms / 1000,
+    ACC = as.numeric(respond3.ACC),
+    Arouse = Arouse.RESP,
+    Valence = Valence.RESP,
+    Origin_Identity = Identity,
+    English_Identity = Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Familiar" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    Session = as.factor(Session),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Gender, Age, 
+    Matching, Origin_Identity, English_Identity, Standarlized_Identity, Mood, Arouse, Valence, Session,  
+    RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity, Session
+  )
+
+names(df)[4] <- "Qian_2019_QJEP Exp 1"
+summary(df[[4]])
+write.csv(x = df[[4]], file = "../1_Clean_Data/Qian_2019_QJEP/Qian_2019_QJEP_Exp1_Clean.csv")
+```
+
+# Haoyue Qian_2019_QJEP 
+## Experiment 2 (Identity = 2)
+"Self", "Familiar"("Celebrity")   →   "Self","Celebrity","Stranger" （No trial message)
+```{r Paper p51 Experiment 2}
+df[[5]] <- read.csv(
+  "../2_Raw_Data/Qian_2019_QJEP/Qian_2019_QJEP_Exp2_raw.csv"
+  ) %>%
+  tidyr::separate(
+    condition1correct,
+    into = c("Identity", "Matching"),
+    sep = "-shape_"
+  ) %>%
+  dplyr::mutate(
+    Subject = Subject,
+    Identity = case_when(
+      Identity == "Self" ~ "Self",
+      Identity == "Familiar" ~ "Celebrity"
+    ),
+    Matching = case_when(
+      Matching == "Matched" ~ "Matching",
+      Matching == "Mismatched" ~ "Nonmatching"
+    ),
+    Cue =  condition1level,
+    Gender = Sex,
+    RT_ms = as.numeric(respond3.RT),
+    RT_sec = RT_ms / 1000,
+    ACC = as.numeric(respond3.ACC)
+  ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    Identity = factor(
+      Identity, levels = c("Self", "Familiar")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    Origin_Identity = Identity,
+    English_Identity = Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Familiar" ~ "Close"
+    ),
+  ) %>%
+  dplyr::select(
+    Subject, Gender, Matching, Origin_Identity, English_Identity, Standarlized_Identity, Cue, RT_ms, RT_sec, ACC,
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+names(df)[5] <- "Qian_2019_QJEP Exp 2"
+summary(df[[5]])
+write.csv(x = df[[5]], file = "../1_Clean_Data/Qian_2019_QJEP/Qian_2019_QJEP_Exp2_Clean.csv")
+```
+
+# Sarah Schaefer_2019_CP 
+## Experiment 1 (Identity = 4)
+"Self", "Mother","none", "Acquaintance"   →   "Self","Close","Acquaintance,"Non_Person"（No  trial message)
+```{r Paper p54 Experiment 1}
+df[[6]] <- read.csv(
+  "../2_Raw_Data/Schaefer_2019_CP/Schaefer_2019_CP_Exp1_raw.csv"
+  ) %>%
+  dplyr::filter(
+    Procedure.Trial. == "FLproc"
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = case_when(
+      FLbed == "comp" ~ "Matching",
+      FLbed == "incomp" ~ "Nonmatching"
+    ),
+    Origin_Identity = flanker,
+    Shape = FLform,
+    Age = Age,
+    Handedness = hand,
+    Gender = Sex,
+    RT_ms = fl.RT,
+    RT_sec = fl.RT / 1000,
+    ACC = as.numeric(fl.ACC)
+  ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    English_Identity = case_when(
+      Origin_Identity == "Ich" ~ "Self",
+      Origin_Identity == "Mutter" ~ "Mother",
+      Origin_Identity == "Bekannter" ~ "Acquaintance",
+      Origin_Identity == "none" ~ "none"
+      ),
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Mother" ~ "Close",
+      English_Identity == "Acquaintance" ~ "Acquaintance",
+      English_Identity == "none" ~ "NonPerson",
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Gender, Age, Handedness,
+    Matching, Origin_Identity, English_Identity, Standarlized_Identity, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+names(df)[6] <- "Schaefer_2019_CP Exp 1"
+summary(df[[6]])
+write.csv(x = df[[6]], file = "../1_Clean_Data/Schaefer_2019_CP/Schaefer_2019_CP_Exp1_Clean.csv")
+```
+
+# Sarah Schaefer_2019_CP 
+## Experiment 2 (Identity = 4)
+"Self", "Mother","none", "Acquaintance"   （No  trial message)
+```{r Paper p54 Experiment 2}
+df[[7]] <- read.csv(
+  "../2_Raw_Data/Schaefer_2019_CP/Schaefer_2019_CP_Exp2_raw.csv"
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Age = Age,
+    Handedness = hand,
+    Gender = Sex,
+    Condition = Bed,
+    RT_ms = MT4.RT,
+    RT_sec = MT4.RT / 1000,
+    ACC = as.numeric(MT4.ACC)
+  ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(MT4.ACC),
+  ) %>%
+    dplyr::select(
+    Subject, Gender, Age, Condition, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Condition
+  )
+
+names(df)[7] <- "Schaefer_2019_CP Exp 2"
+summary(df[[7]])
+write.csv(x = df[[7]], file = "../1_Clean_Data/Schaefer_2019_CP/Schaefer_2019_CP_Exp2_Clean.csv")
+```
+
+# Sarah Schaefer_2019_CP 
+## Experiment 3 (Identity = 3)
+"Self", "Mother", "Acquaintance"    →   "Self","Close","Non_Person"（No trial message)
+```{r Paper p54 Experiment 3}
+df[[8]] <- read.csv(
+  "../2_Raw_Data/Schaefer_2019_CP/Schaefer_2019_CP_Exp3_raw.csv"
+  ) %>%
+  dplyr::filter(
+    Procedure == "RPproc"
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Gender = Sex,
+    Age = Age,
+    Handedness = Handedness,
+    Matching = Match,
+    Origin_Identity = Identity,
+    Shape = target,
+    RT_ms = RT,
+    RT_sec = RT / 1000,
+    ACC = as.numeric(ACC)
+  ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = case_when(
+      Origin_Identity == "Ich" ~ "Self",
+      Origin_Identity == "Mutter" ~ "Mother",
+      Origin_Identity == "Bekannter" ~ "Acquaintance",
+      ),
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Mother" ~ "Close",
+      English_Identity == "Acquaintance" ~ "Acquaintance",
+    ),
+  ) %>%
+  dplyr::select(
+    Subject, Gender, Age, Handedness, 
+    Matching, Origin_Identity, English_Identity, Standarlized_Identity, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity, English_Identity, Standarlized_Identity,
+  )
+names(df)[8] <- "Schaefer_2019_CP Exp 3"
+summary(df[[8]])
+write.csv(x = df[[8]], file = "../1_Clean_Data/Schaefer_2019_CP/Schaefer_2019_CP_Exp3_Clean.csv")
+```
+
+# Mateusz Wozniak_2018_PLOS (Face)
+## Experiment 1 (Identity = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Non_Person" (Face_Gender)
+```{r Paper p95 Experiment 1}
+df[[9]] <- read.csv(
+  "../2_Raw_Data/Wozniak_2018_PLOS/Wozniak_2018_PLOS_Exp1_raw.csv"
+  ) %>%
+  dplyr::filter(
+    PracticeMode == "No"
+  ) %>%
+  dplyr::select(
+    Subject,
+    Identity = Cue,
+    Shape = Stimulus,
+    Face_Gender = Face_Gender,
+    RT_ms = Cue.RT,
+    ACC = Cue.ACC,
+    Response = Cue.RESP,
+    Block = TrialList.Cycle,
+    Trial = TrialList.Sample,
+  ) %>%
+  dplyr::mutate(
+    Shape = case_when(
+      Shape == "shape1.jpg" ~ "Self",
+      Shape == "shape2.jpg" ~ "Friend",
+      Shape == "shape3.jpg" ~ "Stranger",
+      is.na(Shape) ~ NA_character_,
+      TRUE ~ Shape
+    ),
+    Origin_Identity = case_when(
+      Identity == "You" ~ "Self",
+      Identity == "Friend" ~ "Friend",
+      Identity == "Stranger" ~ "Stranger",
+      is.na(Identity) ~ NA_character_,
+      TRUE ~ Identity
+    ),
+    Matching = case_when(
+      Shape == Identity ~ "Matching",
+      Shape != Identity ~ "Nonmatching"
+    ),
+    Face_Gender = Face_Gender,
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000
+  ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    Origin_Identity = factor(
+      Origin_Identity, levels = c("Self", "Friend", "Stranger")
+    ),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    Face_Gender = as.factor(Face_Gender),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Block, Trial, Face_Gender,
+    Matching, Origin_Identity, English_Identity, Standarlized_Identity, 
+    RT_ms, RT_sec, ACC, 
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Block, Face_Gender
+  )
+
+names(df)[9] <- "Wozniak_2018_PLOS Exp 1"
+summary(df[[9]])
+write.csv(x = df[[9]], file = "../1_Clean_Data/Wozniak_2018_PLOS/Wozniak_2018_PLOS_Exp1_Clean.csv")
+```
+
+# Mateusz Wozniak_2018_PLOS
+## Experiment 2 (Identity = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"
+```{r Paper p95 Experiment 2}
+df[[10]] <- read.csv(
+  "../2_Raw_Data/Wozniak_2018_PLOS/Wozniak_2018_PLOS_Exp2_raw.csv"
+  ) %>%
+  dplyr::filter(
+    PracticeMode == "No"
+  ) %>%
+  dplyr::select(
+    Subject,
+    Identity = Cue,
+    Shape = Stimulus,
+    Face_Gender = Face_Gender,
+    RT_ms = Stimulus.RT,
+    ACC = Stimulus.ACC,
+    Block = TrialList.Cycle,
+    Trial = TrialList.Sample,
+  ) %>%
+  dplyr::mutate(
+    Shape = case_when(
+      Shape == "shape1.jpg" ~ "Self",
+      Shape == "shape2.jpg" ~ "Friend",
+      Shape == "shape3.jpg" ~ "Stranger",
+      is.na(Shape) ~ NA_character_,
+      TRUE ~ Shape
+    ),
+    Origin_Identity = case_when(
+      Identity == "You" ~ "Self",
+      Identity == "Friend" ~ "Friend",
+      Identity == "Stranger" ~ "Stranger",
+      is.na(Identity) ~ NA_character_,
+      TRUE ~ Identity
+    ),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    Matching = case_when(
+      Shape == Identity ~ "Matching",
+      Shape != Identity ~ "Nonmatching"
+    ),
+    Face_Gender = Face_Gender,
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000
+  ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    Face_Gender = as.factor(Face_Gender),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Block, Trial, 
+    Matching, Origin_Identity, English_Identity, Standarlized_Identity, 
+    RT_ms, RT_sec, ACC, Face_Gender
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Block, 
+  )
+
+names(df)[10] <- "Wozniak_2018_PLOS Exp 2"
+summary(df[[10]])
+write.csv(x = df[[10]], file = "../1_Clean_Data/Wozniak_2018_PLOS/Wozniak_2018_PLOS_Exp2_Clean.csv")
+```
+
+# Marius Golubickis_2021_AP
+## Experiment 1 (Identity = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"（No  trial message)
+```{r Paper n4 Experiment 1}
+df[[11]] <- read.csv(
+  "../2_Raw_Data/Golubickis_2021_AP/Golubickis_2021_AP_Exp1_raw.csv"
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(subject),
+    Matching = case_when(
+      type == "match" ~ "Matching",
+      type == "nonmatch" ~ "Nonmatching"
+    ),
+    blocktype = blocktype,
+    Origin_Identity = label,
+    RT_ms = as.numeric(latency),
+    RT_sec = RT_ms / 1000,
+    ACC = as.numeric(correct)
+  ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::select(
+    Subject, Matching, Origin_Identity, English_Identity, Standarlized_Identity, RT_ms, RT_sec, ACC, blocktype
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+names(df)[11] <- "Golubickis_2021_AP Exp 1"
+summary(df[[11]])
+write.csv(x = df[[11]], file = "../1_Clean_Data/Golubickis_2021_AP/Golubickis_2021_AP_Exp1_Clean.csv")
+```
+
+## Experiment 2 (Identity = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"
+```{r}
+df[[12]] <- read.csv(
+  "../2_Raw_Data/Golubickis_2021_AP/Golubickis_2021_AP_Exp2_raw.csv"
+) %>%
+  dplyr::mutate(
+    Subject = as.numeric(subject),
+    Matching = case_when(
+      type == "match" ~ "Matching",
+      type == "nonmatch" ~ "Nonmatching"
+    ),
+    Blocktype = blocktype,
+    Origin_Identity = label,
+    RT_ms = as.numeric(latency),
+    RT_sec = RT_ms / 1000,
+    ACC = as.numeric(correct),
+    Trial = trialnum,
+    Block = ceiling(row_number() / 60)
+  ) %>%
+  dplyr::mutate(
+    Matching = factor(Matching, levels = c("Matching", "Nonmatching")),
+    English_Identity = case_when(
+      Origin_Identity == "self" ~ "Self",
+      Origin_Identity == "friend" ~ "Friend",
+      Origin_Identity == "stranger" ~ "Stranger"
+    ),
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger"
+    )
+  ) %>%
+  dplyr::group_by(Subject) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(
+    Subject, Block, Trial, 
+    Matching, Origin_Identity, English_Identity, Standarlized_Identity, 
+    RT_ms, RT_sec, ACC, Blocktype
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(Subject, Block)
+
+names(df)[12] <- "Golubickis_2021_AP Exp 2"
+summary(df[[12]])
+write.csv(x = df[[12]], file = "../1_Clean_Data/Golubickis_2021_AP/Golubickis_2021_AP_Exp2_Clean.csv", row.names = FALSE)
+```
+
+# Mayan Navon_2021
+## Experiment 1 (Identity = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"（No  trial message)
+```{r Paper n13 Experiment 1}
+df[[13]] <- read.csv(
+  "../2_Raw_Data/Navon_2021/Navon_2021_Exp1_raw.csv"
+  ) %>%
+  dplyr::filter(
+    Procedure.SubTrial. == "MMProc"
+  ) %>%
+  dplyr::select(
+    Subject,
+    Shape = Stimulus,
+    Handedness = Handedness,
+    First_Lanugage = MotherTongue,
+    Response = Target.RESP,
+    Gender = Sex,
+    Age = Age,
+    Label = Word,
+    CloseShape,
+    MediumShape,
+    FarShape,
+    RT = Target.RT,
+    ACC = Target.ACC
+  ) %>%
+  dplyr::mutate(
+    # 需要先生成Identity(Shape)，然后在判断是否Shape == Label
+    Origin_Identity = case_when(
+      Shape == CloseShape ~ "Self",
+      Shape == MediumShape ~ "Friend",
+      Shape == FarShape ~ "Stranger",
+      TRUE ~ Shape # 存在NA
+    ),
+    Matching = case_when(
+      Origin_Identity == Label ~ "Matching",
+      Origin_Identity != Label ~ "Nonmatching",
+    ),
+    RT_ms = as.numeric(RT),
+    RT_sec = RT_ms / 1000,
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::select(
+    Subject, Gender, Age, Handedness, First_Lanugage,
+    Shape, Label, Matching, 
+    Origin_Identity, English_Identity, Standarlized_Identity, 
+    Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+names(df)[13] <- "Mayan Navon_2021 Exp 1"
+summary(df[[13]])
+write.csv(x = df[[13]], file = "../1_Clean_Data/Navon_2021/Navon_2021_Exp1_Clean.csv")
+```
+
+# Mayan Navon_2021
+## Experiment 2 (Identity = 3)
+"Father", "Close", "Stranger"   →   "Close","Close","Stranger"（No  trial message)
+```{r Paper n13 Experiment 2}
+df[[14]] <- read.csv(
+  "../2_Raw_Data/Navon_2021/Navon_2021_Exp2_raw.csv"
+  ) %>%
+  dplyr::filter(
+    Procedure.SubTrial. == "MMProc"
+  ) %>%
+  dplyr::select(
+    Subject,
+    Handedness = Handedness,
+    First_Lanugage = MotherTongue,
+    Gender = Sex,
+    Age = Age,
+    Shape = Stimulus,
+    Response = Target.RESP,
+    CloseShape,
+    MediumShape,
+    FarShape,
+    BlockType,
+    RT = Target.RT,
+    ACC = Target.ACC
+  ) %>%
+  dplyr::mutate(
+    # 需要先生成Identity(Shape)，然后在判断是否Shape == Label
+    Origin_Identity = case_when(
+      Shape == CloseShape ~ "Father",
+      Shape == MediumShape ~ "Close",
+      Shape == FarShape ~ "Stranger",
+      TRUE ~ Shape # 存在NA
+    ),
+    Matching = case_when(
+      BlockType == "CloseBlock" & Shape == CloseShape ~ "Matching",
+      BlockType == "MediumBlock" & Shape == MediumShape ~ "Matching",
+      BlockType == "FarBlock" & Shape == FarShape ~ "Matching",
+      TRUE ~ "Nonmatching"
+    ),
+    RT_ms = as.numeric(RT),
+    RT_sec = RT_ms / 1000,
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Father" ~ "Close",
+      English_Identity == "Close" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::select(
+    Subject, Gender, Age, Handedness, First_Lanugage, 
+    Shape, Origin_Identity, English_Identity, Standarlized_Identity, Matching, Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange( 
+    Subject, Origin_Identity, English_Identity, Standarlized_Identity, Matching
+  )
+
+names(df)[14] <- "Mayan Navon_2021 Exp 2"
+summary(df[[14]])
+write.csv(x = df[[14]], file = "../1_Clean_Data/Navon_2021/Navon_2021_Exp2_Clean.csv")
+```
+
+# Mayan Navon_2021
+## Experiment 3 (Identity = 3) 
+"Self", "Father", "Stranger"    →   "Self","Close","Stranger"（No  trial message)
+```{r Paper n13 Experiment 3}
+df[[15]] <- read.csv(
+  "../2_Raw_Data/Navon_2021/Navon_2021_Exp3_raw.csv"
+  ) %>%
+  dplyr::filter(
+  Procedure.SubTrial. == "MMProc"
+  ) %>%
+  dplyr::select(
+    Subject,
+    Handedness = Handedness,
+    First_Lanugage = MotherTongue,
+    Gender = Sex,
+    Age = Age,
+    Shape = Stimulus,
+    Label = Word,
+    CloseShape,
+    MediumShape,
+    FarShape,
+    Response = Target.RESP,
+    RT = Target.RT,
+    ACC = Target.ACC
+  ) %>%
+  dplyr::mutate(
+    Origin_Identity = case_when(
+      Shape == CloseShape ~ "Self",
+      Shape == MediumShape ~ "Father",
+      Shape == FarShape ~ "Stranger",
+      TRUE ~ Shape),
+    Matching = case_when(
+      Origin_Identity == Label ~ "Matching",
+      Origin_Identity != Label ~ "Nonmatching",
+    ),
+    RT_ms = as.numeric(RT),
+    RT_sec = RT_ms / 1000,
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Father" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::select(
+    Subject, Gender, Age, Handedness, First_Lanugage, 
+    Matching, Origin_Identity, English_Identity, Standarlized_Identity, Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+names(df)[15] <- "Mayan Navon_2021 Exp 3"
+summary(df[[15]])
+write.csv(x = df[[15]], file = "../1_Clean_Data/Navon_2021/Navon_2021_Exp3_Clean.csv")
+```
+
+# Mayan Navon_2021
+## Experiment 4 (Identity = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"（No  trial message)
+```{r Paper n13 Experiment 4}
+df[[16]] <- read.csv(
+  "../2_Raw_Data/Navon_2021/Navon_2021_Exp4_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject,
+    Handedness = Handedness,
+    First_Lanugage = MotherTongue,
+    Gender = Sex,
+    Age = Age,
+    Shape = Stimulus,
+    Word = Word,
+    CloseShape,
+    MediumShape,
+    FarShape,
+    RT = Target.RT,
+    ACC = Target.ACC,
+    Response = Target.RESP
+    ) %>%
+  dplyr::mutate(
+    Origin_Identity = case_when(
+      Shape == CloseShape ~ "Self",
+      Shape == MediumShape ~ "Friend",
+      Shape == FarShape ~ "Stranger",
+      TRUE ~ Shape
+      ),
+    Matching = case_when(
+      Origin_Identity == Word ~ "Matching",
+      Origin_Identity != Word ~ "Nonmatching",
+    ),
+    RT_ms = as.numeric(RT),
+    RT_sec = RT_ms / 1000,
+    ACC = as.numeric(ACC),
+    ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+      ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    ) %>%
+  dplyr::select(
+    Subject, Gender, Age, Handedness, First_Lanugage, 
+    Shape, Word, Matching, Origin_Identity, English_Identity, Standarlized_Identity, Response, RT_ms, RT_sec, ACC
+    ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+    ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+    )
+
+names(df)[16] <- "Mayan Navon_2021 Exp 4"
+summary(df[[16]])
+write.csv(x = df[[16]], file = "../1_Clean_Data/Navon_2021/Navon_2021_Exp4_Clean.csv")
+```
+
+# Saga L. Svensson_2021_PR
+## Experiment 1 (Identity = 2)
+"Self", "Friend"    →   "Self","Close"（No  trial message)
+```{r Paper n16 Experiment 1}
+df[[17]] <- read.csv(
+  "../2_Raw_Data/Svensson_2021_PR/Svensson_2021_PR_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Participant..,
+    Matching = Trial.Type,
+    Word = Target.Label,
+    Shape = Shape.Association,
+    Origin_Identity = Shape.Association,
+    RT_ms = Reponse.Time,
+    ACC = Target.Accuracy
+    ) %>%
+  dplyr::mutate(
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000
+    ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+      ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+    ),
+    ) %>%
+  dplyr::select(
+    Subject, Word, Shape, Matching, Origin_Identity, English_Identity, Standarlized_Identity, RT_ms, RT_sec, ACC
+    ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+    ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+    )
+
+names(df)[17] <- "Svensson_2021_PR Exp 1"
+summary(df[[17]])
+write.csv(x = df[[17]], file = "../1_Clean_Data/Svensson_2021_PR/Svensson_2021_PR_Exp1_Clean.csv")
+```
+
+# Saga L. Svensson_2021_PR
+## Experiment 2 (Identity = 2)
+"Self", "Friend"    →   "Self","Close"（No  trial message)
+```{r Paper n16 Experiment 2}
+df[[18]] <- read.csv(
+  "../2_Raw_Data/Svensson_2021_PR/Svensson_2021_PR_Exp2_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Participant,
+    Matching = Trial.Type,
+    Label = Expectancy,
+    Shape = Shape.Association,
+    Origin_Identity = Shape.Association,
+    RT_ms = Response.Time,
+    ACC = Target.Accuracy
+    ) %>%
+  dplyr::mutate(
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000
+    ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+      ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+    ),
+    ) %>%
+  dplyr::select(
+    Subject, Label, Matching, Origin_Identity, English_Identity, Standarlized_Identity, RT_ms, RT_sec, ACC
+    ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+    ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+    )
+
+names(df)[18] <- "Svensson_2021_PR Exp 2"
+summary(df[[18]])
+write.csv(x = df[[18]], file = "../1_Clean_Data/Svensson_2021_PR/Svensson_2021_PR_Exp2_Clean.csv")
+```
+
+# Saga L. Svensson_2021_PR
+## Experiment 3 (Identity = 2)
+"Self", "Friend"    →   "Self","Close"（No  trial message)
+```{r Paper n16 Experiment 3}
+df[[19]] <- read.csv(
+  "../2_Raw_Data/Svensson_2021_PR/Svensson_2021_PR_Exp3_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Participant,
+    Matching = Trial.Type,
+    Label = Expectancy,
+    Shape = Shape.Association,
+    Origin_Identity = Shape.Association,
+    RT_ms = Response.Time,
+    ACC = Target.Accuracy
+    ) %>%
+  dplyr::mutate(
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000
+    ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+      ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+    ),
+    ) %>%
+  dplyr::select(
+    Subject, Label, Shape, Matching, Origin_Identity, English_Identity, Standarlized_Identity, RT_ms, RT_sec, ACC
+    ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+    ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+    )
+
+names(df)[19] <- "Svensson_2021_PR Exp 3"
+summary(df[[19]])
+write.csv(x = df[[19]], file = "../1_Clean_Data/Svensson_2021_PR/Svensson_2021_PR_Exp3_Clean.csv")
+```
+
+# Xu_2021_CP
+## Experiment 1 (Identity = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"（No  trial message)
+```{r Paper n23 Experiment 1}
+df[[20]] <- read.csv(
+  "../2_Raw_Data/Xu_2021_CP/Xu_2021_CP_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Gender = Sex,
+    Shape = Shape,
+    Label = Label,
+    Matching = Correctanswer,
+    Origin_Identity = Label,
+    Group = Group,
+    RT_ms = iti.RT,
+    ACC = iti.ACC,
+    ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "j" ~ "Matching",
+      Matching == "f" ~ "Nonmatching"),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+      ),
+    Group = as.factor(Group),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    ) %>%
+  dplyr::select(
+    Subject, Shape, Matching, Origin_Identity, English_Identity, Standarlized_Identity, Group, RT_ms, RT_sec, ACC
+    ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+    ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity, English_Identity, Standarlized_Identity, Group
+    )
+
+names(df)[20] <- "Xu_2021_CP Exp 1"
+summary(df[[20]])
+write.csv(x = df[[20]], file = "../1_Clean_Data/Xu_2021_CP/Xu_2021_CP_Exp1_Clean.csv")
+```
+
+# Hu_2023  
+## Experiment 1 (Identity = 2)
+"Self", "Stranger"    →   "Self","Stranger"
+```{r Paper s2 Experiment 1}
+df[[21]] <- read.csv(
+  "../2_Raw_Data/Hu_2023/Hu_2023_Exp1_raw.csv"
+  ) %>%
+  dplyr::filter(
+    Session != 1,
+    !(Subject %in% c(6205, 6209, 6223)),
+
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Age = Age,
+    Handedness = Handedness,
+    Gender = Sex,
+    Shape = Target,
+    Label = Label,
+    Matching = CorrectAnswer,
+    Origin_Identity = identity,
+    RT = Target.RT,
+    ACC = Target.ACC,
+    Block = BlockList.Sample,
+    Trial = SubTrial
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "m" ~ "Matching",
+      Matching == "k" ~ "Nonmatching"
+    ),
+    Origin_Identity = case_when(
+      Origin_Identity == "self" ~ "Self",
+      Origin_Identity == "other" ~ "Stranger"
+    ),
+    RT_ms = as.numeric(RT),
+    RT_sec = RT_ms / 1000,
+  ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Handedness, 
+    Block, Trial, Shape, Label, Matching, 
+    Origin_Identity, English_Identity, Standarlized_Identity, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::arrange(
+    Subject, Block, Trial
+  )
+
+names(df)[21] <- "Hu_2023_Exp1"
+summary(df[[21]])
+write.csv(x = df[[21]], file = "../1_Clean_Data/Hu_2023/Hu_2023_Exp1_Clean.csv")
+```
+
+# Constable_2019_EPHPP
+## Experiment 1 (Identity = 4)
+"Self", "We", "They","You"    →   "Self","Group-Self","Stranger","Group-Stranger"
+```{r Paper p5 Experiment 1}
+df[[22]] <- read.csv(
+  "../2_Raw_Data/Constable_2019_EPHPP/Exp1/Constable_2019_EPHPP_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Participant.Number,
+    Block = Block,
+    Trial = trialinBlock,
+    Gender = Gender,
+    Age = Age,
+    Handedness = Handedness,
+    First_Language = First.Language,
+    Matching = Condition,
+    Origin_Identity = Label,
+    Phase = Training.Experiment,
+    Shape = Shape,
+    Label = Label, 
+    WeShape = WeShape,
+    SelfShape = SelfShape,
+    TheyShape = TheyShape,
+    AloneShape = AloneShape,
+    ShapeLoc = ShapeLoc,
+    Response = resp,
+    RT_sec = rt,
+    ACC = corr,
+  ) %>%
+  dplyr::mutate(
+    ACC = as.numeric(ACC),
+    RT_sec = as.numeric(RT_sec),
+    RT_ms = RT_sec * 1000,
+    RT_ms = as.numeric(RT_ms),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "We" ~ "Group-Self",
+      English_Identity == "They" ~ "Group-Stranger",
+      English_Identity == "You" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::arrange(
+    Subject, Block, Trial
+    )
+names(df)[22] <- "Constable_2019_EPHPP_Exp1"
+summary(df[[22]])
+write.csv(x = df[[22]], file = "../1_Clean_Data/Constable_2019_EPHPP/Exp1/Constable_2019_EPHPP_Exp1_Clean.csv")
+```
+
+# Constable_2019_EPHPP
+## Experiment 2 (Identity = 4)
+"Self", "We", "They","You"    →   "Self","Group-Self","Stranger","Group-Stranger"
+```{r Paper p5 Experiment 2}
+df[[23]] <- read.csv(
+  "../2_Raw_Data/Constable_2019_EPHPP/Exp2/Constable_2019_EPHPP_Exp2_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Participant.Number,
+    Block = Block,
+    Trial = trialinBlock,
+    Gender = Gender,
+    Age = Age,
+    Handedness = Handedness,
+    First_Language = First.Language,
+    Matching = Condition,
+    Origin_Identity = Shape,
+    Phase = Training.Experiment,
+    Shape = Shape,
+    Label = Label, 
+    WeShape = WeShape,
+    SelfShape = SelfShape,
+    TheyShape = TheyShape,
+    AloneShape = AloneShape,
+    ShapeLoc = ShapeLoc,
+    Response = resp,
+    RT_sec = rt,
+    ACC = corr,
+  ) %>%
+  dplyr::mutate(
+    ACC = as.numeric(ACC),
+    RT_sec = as.numeric(RT_sec),
+    RT_ms = RT_sec * 1000,
+    RT_ms = as.numeric(RT_ms),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "We" ~ "Group-Self",
+      English_Identity == "They" ~ "Group-Stranger",
+      English_Identity == "You" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::arrange(
+    Subject, Block, Trial
+  )
+
+names(df)[23] <- "Constable_2019_EPHPP_Exp2"
+summary(df[[23]])
+write.csv(x = df[[23]], file = "../1_Clean_Data/Constable_2019_EPHPP/Exp2/Constable_2019_EPHPP_Exp2_Clean.csv")
+```
+
+# Constable_2019_EPHPP
+## Experiment 3 (Identity = 4)
+"Self", "We", "They","Alone"    →   "Self","Group-Self","Stranger","Group-Stranger"
+```{r Paper p5 Experiment 3}
+df[[24]] <- read.csv(
+  "../2_Raw_Data/Constable_2019_EPHPP/Exp3/Constable_2019_EPHPP_Exp3_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Participant.Number,
+    Block = Block,
+    Trial = trialinBlock,
+    Gender = Gender,
+    Age = Age,
+    Handedness = Handedness,
+    First_Language = First.Language,
+    Matching = Condition,
+    Origin_Identity = Label,
+    Phase = Training.Experiment,
+    Shape = Shape,
+    Label = Label, 
+    WeShape = WeShape,
+    SelfShape = SelfShape,
+    TheyShape = TheyShape,
+    AloneShape = AloneShape,
+    ShapeLoc = ShapeLoc,
+    Response = resp,
+    RT_sec = rt,
+    ACC = corr,
+  ) %>%
+  dplyr::mutate(
+    ACC = as.numeric(ACC),
+    RT_sec = as.numeric(RT_sec),
+    RT_ms = RT_sec * 1000,
+    RT_ms = as.numeric(RT_ms),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "We" ~ "Group-Self",
+      English_Identity == "They" ~ "Group-Stranger",
+      English_Identity == "You" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::arrange(
+    Subject, Block, Trial
+    )
+
+names(df)[24] <- "Constable_2019_EPHPP_Exp3"
+summary(df[[24]])
+write.csv(x = df[[24]], file = "../1_Clean_Data/Constable_2019_EPHPP/Exp3/Constable_2019_EPHPP_Exp3_Clean.csv")
+```
+
+# Constable_2019_EPHPP
+## Experiment 4 (Identity = 5)
+"Self", "We", "They","Alone"    →   "Self","Group-Self","Stranger","Group-Stranger"
+```{r Paper p5 Experiment 4}
+df[[25]] <- read.csv(
+  "../2_Raw_Data/Constable_2019_EPHPP/Exp4/Constable_2019_EPHPP_Exp4_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Pair.Number,
+    Block = Block,
+    Trial = trialinblock,
+    P1Age = P1Age,
+    P2Age = P2Age,
+    Matching = Condition,
+    Origin_Identity = Label,
+    Shape = Shape,
+    Label = Label, 
+    ShapeLoc = ShapeLoc,
+    Response = resp,
+    RT_sec = rt,
+    ACC = corr,
+  ) %>%
+  dplyr::mutate(
+    ACC = as.numeric(ACC),
+    RT_sec = as.numeric(RT_sec),
+    RT_ms = RT_sec * 1000,
+    RT_ms = as.numeric(RT_ms),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Person1" ~ "Self",
+      English_Identity == "Person2" ~ "Self",
+      English_Identity == "Team" ~ "Group-Self",
+      English_Identity == "StrangerTeam" ~ "Group-Stranger",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::arrange(
+    Subject, Block, Trial
+    )
+names(df)[25] <- "Constable_2019_EPHPP_Exp4"
+summary(df[[25]])
+write.csv(x = df[[25]], file = "../1_Clean_Data/Constable_2019_EPHPP/Exp4/Constable_2019_EPHPP_Exp4_Clean.csv")
+```
+
+# Vicovaro_2022_EPHPP
+## Experiment 1 (Identity = 2)
+"Self", "Stranger"    →   "Self","Stranger" (No  trial message)
+```{r Paper t6 Experiment 1}
+df[[26]] <- read.csv(
+  "../2_Raw_Data/Vicovaro_2022_EPHPP/Vicovaro_2022_EPHPP_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = participant_id,
+    Age = age,
+    Handedness = handedness,
+    Gender = sex,
+    Response = responseKey,
+    Symmetry = block,
+    Matching = match,
+    Origin_Identity = shape,
+    RT_sec = respRt,
+    ACC = respCorr,
+  ) %>%
+  dplyr::mutate(
+    Symmetry = case_when(
+      Symmetry == "selfS" ~ "Symmetry",
+      Symmetry == "selfA" ~ "Asymmetry"
+    ),
+    English_Identity = case_when(
+      Origin_Identity == "self-related" ~ "Self",
+      Origin_Identity == "stranger-related" ~ "Stranger"
+    ),
+    Standarlized_Identity = English_Identity,
+    Matching = case_when(
+      Matching == "yes" ~ "Matching",
+      Matching == "no" ~ "Nonmatching",
+    ),
+    ACC = case_when(
+      ACC == 1 ~ 1,
+      ACC == 0 ~ 0,
+      ACC == "missed" ~ NA
+    ),
+    RT_sec = as.numeric(RT_sec),
+    RT_ms = RT_sec * 1000
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Handedness, Gender, Response, Symmetry, 
+    Matching, Origin_Identity, English_Identity, Standarlized_Identity, 
+    RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+names(df)[26] <- "Vicovaro_2022_EPHPP_Exp1"
+summary(df[[26]])
+write.csv(x = df[[26]], file = "../1_Clean_Data/Vicovaro_2022_EPHPP/Vicovaro_2022_EPHPP_Exp1_Clean.csv")
+```
+
+# Vicovaro_2022_EPHPP
+## Experiment 2 (Identity = 2)
+"Self", "Stranger"    →   "Self","Stranger" (No  trial message)
+```{r Paper t6 Experiment 2}
+temp <- read.csv(
+  "../2_Raw_Data/Vicovaro_2022/Vicovaro_2022_Exp2_raw.csv"
+  ) %>%
+  dplyr::filter(block == "selfS") %>%
+  dplyr::select(
+    Subject = participant_id,
+    Age = age,
+    Handedness = handedness,
+    Gender = sex,
+    Response = responseKey,
+    Symmetry = block,
+    Matching = match,
+    Origin_Identity = shape,
+    RT_sec = respRt,
+    ACC = respCorr,
+  ) %>%
+  dplyr::mutate(
+    Symmetry = dplyr::case_when(
+      Symmetry == "selfS" ~ "Symmetry",
+      Symmetry == "selfA" ~ "Asymmetry"
+    ),
+    English_Identity = case_when(
+      Origin_Identity == "self-related" ~ "Self",
+      Origin_Identity == "stranger-related" ~ "Stranger"
+    ),
+    Standarlized_Identity = English_Identity,
+    Matching = case_when(
+      Matching == "yes" ~ "Matching",
+      Matching == "no" ~ "Nonmatching",
+    ),
+    ACC = case_when(
+      ACC == 1 ~ 1,
+      ACC == 0 ~ 0,
+      ACC == "missed" ~ NA
+    ),
+    RT_sec = as.numeric(RT_sec),
+    RT_ms = RT_sec * 1000
+  ) 
+
+Subject_ID <- temp %>% # nolint
+  dplyr::group_by(
+    Subject
+  ) %>%
+  dplyr::summarise(
+    count = n()
+  ) %>%
+  dplyr::mutate(
+    Subject_ID = row_number()
+  ) %>%
+  dplyr::select(
+    Subject, Subject_ID
+  )
+
+
+df[[27]] <- temp %>%
+  dplyr::left_join(
+    Subject_ID,
+    by = "Subject"
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject_ID),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Handedness, Gender, Response, 
+    Symmetry, Matching, Origin_Identity, English_Identity, Standarlized_Identity, 
+    RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+names(df)[27] <- "Vicovaro_2022_Exp2"
+summary(df[[27]])
+write.csv(x = df[[27]], file = "../1_Clean_Data/Vicovaro_2022/Vicovaro_2022_Exp2_Clean.csv")
+rm(Subject_ID,temp)
+```
+
+# Perrykkad_2022_BMC
+## Experiment 1 (Identity = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"
+```{r Paper t7 Experiment 1}
+df[[28]] <- read.csv(
+  "../2_Raw_Data/Perrykkad_2022_BMC/Perrykkad_2022_BMC_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Origin_Identity = text,
+    Shape = shapeImage,
+    Label = text,
+    Phase = phase,
+    Response = response,
+    SelfShape = selfShape,
+    FriendShape = friendShape,
+    StrangerShape = strangerShape,
+    Matching = matchCondition,
+    RT_ms = latency,
+    ACC = correct,
+    ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "match" ~ "Matching",
+      Matching == "mismatch" ~ "Nonmatching"),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    English_Identity = case_when(
+      Origin_Identity == "FRIEND" ~ "Friend",
+      Origin_Identity == "STRANGER" ~ "Stranger",
+      Origin_Identity == "YOU" ~ "You",
+    ),
+    Standarlized_Identity = case_when(
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+      English_Identity == "You" ~ "Self",
+    ),
+    ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+      ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    ) %>%
+  dplyr::select(
+    Subject, Phase, Matching, Shape, Label, Response,  
+    Origin_Identity, English_Identity, Standarlized_Identity, RT_ms, RT_sec, ACC
+    ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+    ) %>%
+  dplyr::arrange(
+    Subject, Phase, Matching, Origin_Identity
+    )
+
+names(df)[28] <- "Perrykkad_2022_BMC_Exp 1"
+summary(df[[28]])
+write.csv(x = df[[28]], file = "../1_Clean_Data/Perrykkad_2022_BMC/Perrykkad_2022_BMC_Exp1_Clean.csv")
+```
+
+# Hu_2020_CP --
+## Experiment 1 (Identity = 2)
+"Self", "Other"   →   "Self","Stranger"
+```{r Paper p20 Experiment 1}
+df[[29]] <- read.csv(
+  "../2_Raw_Data/Hu_2020_CP/Hu_2020_CP_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Age = Age,
+    Gender = Sex,
+    Handedness = Hand,
+    Origin_Identity = Identity,
+    Morality = Morality,
+    Shape = Shape,
+    Label = Label,
+    Bin = Bin,
+    Response = Resp,
+    Matching = Match,
+    RT_sec = RT,
+    ACC = ACC,
+    ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "match" ~ "Matching",
+      Matching == "mismatch" ~ "Nonmatching"),
+    RT_sec = as.numeric(RT_sec),
+    RT_ms = RT_sec * 1000,
+    ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+      ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Other" ~ "Stranger",
+      English_Identity == "Self" ~ "Self",
+    ),
+    ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Handedness,
+    Shape, Label,  Matching, Origin_Identity, English_Identity, Standarlized_Identity, Morality,
+    Response, Bin, RT_ms, RT_sec, ACC
+    ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+    ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity, English_Identity, Standarlized_Identity, Morality
+    )
+
+names(df)[29] <- "Hu_2020_CP"
+summary(df[[29]])
+write.csv(x = df[[29]], file = "../1_Clean_Data/Hu_2020_CP/Hu_2020_CP_Clean.csv")
+```
+
+# Wozniak_2022_PR
+## Experiment 1 (Identity = 3)
+"Self", "Friend", "None"    →   "Self","Close","Non_Person" (No  trial message)
+```{r Paper t9 Experiment 1}
+###############################Save Raw Data####################################
+# 获取文件列表
+file_list <- list.files(
+  path = "../2_Raw_Data/Wozniak_2022_PR/Data - Experiment 1/",
+  pattern = "^SelfPriorExp_3.*\\.dat$",
+  full.names = TRUE
+)
+
+# 读取dat文件并存入list中
+data_list <- lapply(file_list, read.table, header = FALSE, sep = " ")
+
+combined_data <- do.call(rbind, data_list)
+
+write.csv(
+  x = combined_data, 
+  file = "../2_Raw_Data/Wozniak_2022_PR/Wozniak_2022_PR_Exp1_raw.csv",
+  row.names = FALSE
+)
+
+rm(file_list, data_list, combined_data)
+```
+
+```{r Paper t9 Experiment 1}
+##################################Clean Data####################################
+df[[30]] <- read.csv("../2_Raw_Data/Wozniak_2022_PR/Wozniak_2022_PR_Exp1_raw.csv") %>%
+  dplyr::select(
+    Subject = V1,
+    Gender = V2,
+    Shape = V7,
+    Label1 = V10,
+    Label2 = V11,
+    Label3 = V12,
+    Matching = V14,
+    Response = V5,
+    ACC = V15,
+    RT_ms = V16,
+  ) %>%
+  dplyr::mutate(
+    Shape = case_when(
+      Shape == "shape1.jpg" ~ Label1,
+      Shape == "shape2.jpg" ~ Label2,
+      Shape == "shape3.jpg" ~ Label3,
+    ),
+    Origin_Identity = case_when(
+      Shape == "You" ~ "Self",
+      Shape == "none" ~ "None",
+      TRUE ~ "Friend"
+    ),
+    Matching = case_when(
+      Matching == 1 ~ "Matching",
+      Matching == 2 ~ "Nonmatching"),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "None" ~ "NonPerson",
+      English_Identity == "Self" ~ "Self",
+    ),
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Gender, 
+    Shape, Label1, Label2, Label3, Origin_Identity, English_Identity, Standarlized_Identity,  
+    Matching, Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+names(df)[30] <- "Wozniak_2022_PR_Exp 1"
+summary(df[[30]])
+write.csv(x = df[[30]], file = "../1_Clean_Data/Wozniak_2022_PR/Wozniak_2022_PR_Exp1_Clean.csv")
+```
+
+# Wozniak_2022_PR
+## Experiment 2 (Identity = 3)
+"Self", "Friend", "None"    →   "Self","Close","Non_Person" (No  trial message)
+```{r Paper t9 Experiment 2}
+###############################Save Raw Data####################################
+# 获取文件列表
+file_list <- list.files(
+  path = "../2_Raw_Data/Wozniak_2022_PR/Data - Experiment 2/",
+  pattern = "^SelfPriorExp_1.*\\.dat$",
+  full.names = TRUE
+)
+
+# 读取dat文件并存入list中
+data_list <- lapply(file_list, read.table, header = FALSE, sep = " ")
+
+combined_data <- do.call(rbind, data_list)
+
+write.csv(
+  x = combined_data, 
+  file = "../2_Raw_Data/Wozniak_2022_PR/Wozniak_2022_PR_Exp2_raw.csv",
+  row.names = FALSE
+)
+
+rm(file_list, data_list, combined_data)
+```
+
+```{r Paper t9 Experiment 2}
+##################################Clean Data####################################
+df[[31]] <- read.csv("../2_Raw_Data/Wozniak_2022_PR/Wozniak_2022_PR_Exp2_raw.csv") %>%
+  dplyr::select(
+    Subject = V1,
+    Gender = V2,
+    Shape = V7,
+    Label1 = V10,
+    Label2 = V11,
+    Label3 = V12,
+    Matching = V14,
+    Response = V5,
+    ACC = V15,
+    RT_ms = V16,
+  ) %>%
+  dplyr::mutate(
+    Shape = case_when(
+      Shape == "shape1.jpg" ~ Label1,
+      Shape == "shape2.jpg" ~ Label2,
+      Shape == "shape3.jpg" ~ Label3,
+    ),
+    Origin_Identity = case_when(
+      Shape == "You" ~ "Self",
+      Shape == "none" ~ "None",
+      TRUE ~ "Friend"
+    ),
+    Matching = case_when(
+      Matching == 1 ~ "Matching",
+      Matching == 2 ~ "Nonmatching"),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "None" ~ "NonPerson",
+      English_Identity == "Self" ~ "Self",
+    ),
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Gender, 
+    Shape, Label1, Label2, Label3, 
+    Origin_Identity, English_Identity, Standarlized_Identity,  
+    Matching, Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+names(df)[31] <- "Wozniak_2022_PR_Exp 2"
+summary(df[[31]])
+write.csv(x = df[[31]], file = "../1_Clean_Data/Wozniak_2022_PR/Wozniak_2022_PR_Exp2_Clean.csv")
+```
+
+# Wozniak_2022_PR
+## Experiment 3 (Identity = 3)
+"Self", "Friend", "None"    →   "Self","Close","Non_Person" (No  trial message)
+```{r Paper t9 Experiment 3}
+###############################Save Raw Data####################################
+# 获取文件列表
+file_list <- list.files(
+  path = "../2_Raw_Data/Wozniak_2022_PR/Data - Experiment 3/",
+  pattern = "^SelfPriorExp_2.*\\.dat$",
+  full.names = TRUE
+)
+
+# 读取dat文件并存入list中
+data_list <- lapply(file_list, read.table, header = FALSE, sep = " ")
+
+combined_data <- do.call(rbind, data_list)
+
+write.csv(
+  x = combined_data, 
+  file = "../2_Raw_Data/Wozniak_2022_PR/Wozniak_2022_PR_Exp3_raw.csv",
+  row.names = FALSE
+)
+
+rm(file_list, data_list, combined_data)
+```
+
+```{r Paper t9 Experiment 3}
+##################################Clean Data####################################
+df[[32]] <- read.csv("../2_Raw_Data/Wozniak_2022_PR/Wozniak_2022_PR_Exp3_raw.csv") %>%
+  dplyr::select(
+    Subject = V1,
+    Gender = V2,
+    Shape = V7,
+    Label1 = V10,
+    Label2 = V11,
+    Label3 = V12,
+    Matching = V14,
+    Response = V5,
+    ACC = V15,
+    RT_ms = V16,
+  ) %>%
+  dplyr::mutate(
+    Shape = case_when(
+      Shape == "shape1.jpg" ~ Label1,
+      Shape == "shape2.jpg" ~ Label2,
+      Shape == "shape3.jpg" ~ Label3,
+    ),
+    Origin_Identity = case_when(
+      Shape == "You" ~ "Self",
+      Shape == "none" ~ "None",
+      TRUE ~ "Friend"
+    ),
+    Matching = case_when(
+      Matching == 1 ~ "Matching",
+      Matching == 2 ~ "Nonmatching"),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "None" ~ "NonPerson",
+      English_Identity == "Self" ~ "Self",
+    ),
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Gender, 
+    Shape, Label1, Label2, Label3, 
+    Origin_Identity, English_Identity, Standarlized_Identity,  
+    Matching, Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+names(df)[32] <- "Wozniak_2022_PR_Exp 3"
+summary(df[[32]])
+write.csv(x = df[[32]], file = "../1_Clean_Data/Wozniak_2022_PR/Wozniak_2022_PR_Exp3_Clean.csv")
+```
+
+# Haciahmet_2023_Psychophysiology --
+## Experiment 1 (Identity = 2)
+"Self", "Stranger"    →   "Self","Stranger"
+```{r Paper t1 Experiment 1}
+df[[33]] <- read.csv(
+  "../2_Raw_Data/Haciahmet_2023_Psy/Haciahmet_2023_Psy_Exp1_raw.csv"
+  ) %>%
+  dplyr::filter(Phase == 1,
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Age = Alter,
+    Gender = Geschlecht,
+    Handedness = Hand,
+    Origin_Identity = Target,
+    Shape = TargetImage,
+    Label = LabelText,
+    Matching = Condition,
+    Response = WaitResponse.RESP,
+    RT_ms = WaitResponse.RT,
+    ACC = WaitResponse.ACC,
+    ) %>%
+  dplyr::mutate(
+    Shape = case_when(
+      Shape == ".\\Stimuli\\circle.png" ~ "circle.png",
+      Shape == ".\\Stimuli\\triangle.png" ~ "triangle.png"
+    ),
+    Matching = case_when(
+      Matching == 1 ~ "Matching",
+      Matching == 2 ~ "Nonmatching"
+    ),
+    Origin_Identity = case_when(
+      Origin_Identity == 1 ~ "Self",
+      Origin_Identity == 2 ~ "Stranger"
+    ),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Stranger" ~ "Stranger",
+      English_Identity == "Self" ~ "Self",
+    ),
+    ) %>%
+  dplyr::mutate(
+    as.numeric(as.character(RT_ms)),
+    RT_sec = RT_ms / 1000
+    ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Handedness,
+    Shape, Label,  Matching, 
+    Origin_Identity, English_Identity, Standarlized_Identity,
+    Response, RT_ms, RT_sec, ACC
+    ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+    ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+    )
+
+names(df)[33] <- "Haciahmet_2023_Psy"
+summary(df[[33]])
+write.csv(x = df[[33]], file = "../1_Clean_Data/Haciahmet_2023_Psy/Haciahmet_2023_Psy_Exp1_Clean.csv")
+```
+
+# Sui_2023_CC
+## Experiment 1 (Identity = 2)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"
+```{r Paper t18 Experiment 1}
+df[[34]] <- read.csv(
+  "../2_Raw_Data/Sui_2023_CC/Sui_2023_CC_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = subj_idx,
+    Origin_Identity = person,
+    Stim = stim,
+    Response = response,
+    Matching = match,
+    RT_sec = rt,
+    ACC = accuracy,
+    ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "match" ~ "Matching",
+      Matching == "mismatch" ~ "Nonmatching"),
+    RT_sec = as.numeric(RT_sec),
+    RT_ms = RT_sec * 1000,
+    ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+      ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    ) %>%
+  dplyr::select(
+    Subject,
+    Stim, Matching, 
+    Origin_Identity, English_Identity, Standarlized_Identity,
+    Response, RT_ms, RT_sec, ACC
+    ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+    ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+    )
+
+names(df)[34] <- "Sui_2023_CC"
+summary(df[[34]])
+write.csv(x = df[[34]], file = "../1_Clean_Data/Sui_2023_CC/Sui_2023_CC_Exp1_Clean.csv")
+```
+
+# Hobbs_2023_PM 
+## Experiment 1 (Identity = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"
+```{r Paper t2 Experiment 1}
+temp <- read.csv(
+  "../2_Raw_Data/Hobbs_2023_PM/Hobbs_2023_PM_Exp1_raw.csv"
+  ) %>%
+  dplyr::filter(
+    Task == "Self",
+  ) %>%
+  dplyr::select(
+    Subject = subject,
+    Age = age,
+    Gender = gender,
+    Ethnicity = ethnicity,
+    Employment_Status = employment_status,
+    Education = education,
+    Depression = depression,
+    Treatment = treatment,
+    Shape = Shape,
+    Matching = Matching,
+    Origin_Identity = stimuli,
+    RT_ms = mean_rt_mult,
+    RT_sec = trial_resp.rt,
+    ACC = acc,
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == 1 ~ "Matching",
+      Matching == 0 ~ "Nonmatching"
+    ))
+
+Subject_ID <- temp %>% # nolint
+  dplyr::group_by(
+    Subject
+  ) %>%
+  dplyr::summarise(
+    count = n()
+  ) %>%
+  dplyr::mutate(
+    Subject_ID = row_number()
+  ) %>%
+  dplyr::select(
+    Subject, Subject_ID
+  )
+
+
+df[[35]] <- temp %>%
+  dplyr::left_join(
+    Subject_ID,
+    by = "Subject"
+  ) %>%
+  dplyr::mutate(
+    Subject = Subject_ID
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Ethnicity, Employment_Status, Education,Depression,
+    Treatment,
+    Shape, Matching, Origin_Identity, English_Identity, Standarlized_Identity, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+rm(temp, Subject_ID)
+
+names(df)[35] <- "Hobbs_2023_PM"
+summary(df[[35]])
+write.csv(x = df[[35]], file = "../1_Clean_Data/Hobbs_2023_PM/Hobbs_2023_PM_Exp1_Clean.csv")
+```
+
+# Mcivor_2020_EJN 
+## Experiment 1 (Identity = 2)
+"Self", "Other"   →   "Self","Stranger"
+```{r Paper p45 Experiment 1}
+df[[36]] <- read.csv(
+  "../2_Raw_Data/Mcivor_2020_EJN/Mcivor_2020_EJN_Exp1_raw.csv"
+  ) %>%
+  mutate(Running.SubTrial. = str_to_lower(Running.SubTrial.)) %>%
+  filter(Running.SubTrial. == "testphase"
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Age = Age,
+    Handedness = Handedness,
+    Gender = Sex,
+    Happyshapeother = Happyshapeother,
+    Happyshapeself = Happyshapeself,
+    Neutralshapeother = Neutralshapeother,
+    Neutralshapeself = Neutralshapeself,
+    Sadshapeother = Sadshapeother,
+    Sadshapeself = Sadshapeself,
+    Othershape = Othershape,
+    Selfshape = Selfshape,
+    Label = CellLabel,
+    Origin_Identity = Label2,
+    Response = ITI2.RESP,
+    Matching = CellLabel,
+    RT_ms = ITI2.RT,
+    ACC = ITI2.ACC,
+    ) %>%
+  dplyr::mutate(
+    MatchingExtra = str_extract(Label, "(?<=self|other)(match|nonmatch)"),
+    # 将提取的匹配类型转换为"Matching"或"Nomatching"
+    Matching = case_when(
+      MatchingExtra == "match" ~ "Matching",
+      MatchingExtra == "nonmatch" ~ "Nomatching",
+      TRUE ~ "Nomatching"
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Other" ~ "Stranger",
+    ),
+    ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Handedness,
+    Happyshapeother, Happyshapeself, Neutralshapeother, Neutralshapeself,
+    Sadshapeother, Sadshapeself, Othershape, Selfshape, 
+    Label, Origin_Identity, English_Identity, Standarlized_Identity,
+    Matching, Response, RT_ms, RT_sec, ACC
+    ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+    ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+    )
+
+names(df)[36] <- "Mcivor_2020_EJN"
+summary(df[[36]])
+write.csv(x = df[[36]], file = "../1_Clean_Data/Mcivor_2020_EJN/Mcivor_2020_EJN_Exp1_Clean.csv")
+```
+
+# Liang_2021_HBM
+## Experiment 1 (Identity = 2)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"
+```{r Paper t3 Experiment 1}
+df[[37]] <- read.csv(
+  "../2_Raw_Data/Liang_2021_HBM/Liang_2021_HBM_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = subj_idx,
+    Age = age,
+    Gender = gender,
+    Shape = shape,
+    Matching = match,
+    Origin_Identity = shape,
+    Response = response,
+    Phase = session,
+    RT_sec = rt,
+    ACC = acc,
+  ) %>%
+  dplyr::mutate(
+    Origin_Identity = case_when(
+      Origin_Identity == "self" ~ "Self",
+      Origin_Identity == "friend" ~ "Friend",
+      Origin_Identity == "stranger" ~ "Stranger",
+    ),
+    Matching = case_when(
+      Matching == 1 ~ "Matching",
+      Matching == 0 ~ "Nonmatching"
+    ),
+    RT_sec = as.numeric(RT_sec),
+    RT_ms = RT_sec * 1000
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Gender, 
+    Shape, Matching, Origin_Identity, English_Identity, Standarlized_Identity, Response, Phase, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+names(df)[37] <- "Liang_2021_HBM"
+summary(df[[37]])
+write.csv(x = df[[37]], file = "../1_Clean_Data/Liang_2021_HBM/Liang_2021_HBM_Exp1_Clean.csv")
+```
+
+# Kolvoort_2020_HBM 
+## Experiment 1 (Identity = 2)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"
+```{r Paper p34 Experiment 1}
+df[[38]] <- read.csv(
+  "../2_Raw_Data/Kolvoort_2020_HBM/Kolvoort_2020_HBM_Exp1_correctRT_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = subid,
+    Age = age,
+    Handedness = handedness,
+    First_Language = firstlanguage,
+    Education = completededucation,
+    Countryself = countryself,
+    Countryparents = countryparents,
+    Shape = shape_cat,
+    Label = label,
+    Origin_Identity = label,
+    Matching = matching,
+    Response = respkeymap,
+    RT_ms = reac_time,
+    ACC = accuracy,
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == 1 ~ "Matching",
+      Matching == 0 ~ "Nonmatching"
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    English_Identity = case_when(
+      Origin_Identity == 1 ~ "Self",
+      Origin_Identity == 2 ~ "Friend",
+      Origin_Identity == 3 ~ "Stranger",
+    ),
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Handedness, First_Language, Education, Countryself, Countryparents, 
+    Shape, Label, Matching, Origin_Identity, English_Identity, Standarlized_Identity,
+    Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching
+  )
+
+names(df)[38] <- "Kolvoort_2020_HBM"
+summary(df[[38]])
+write.csv(x = df[[38]], file = "../1_Clean_Data/Kolvoort_2020_HBM/Kolvoort_2020_HBM_Exp1_Clean.csv")
+```
+
+# Liu_2023_CP
+## Experiment 1 (Identity = 2)
+"Self", "Stranger"    →   "Self","Stranger"
+```{r Paper s1 Experiment 1}
+df_Ps1_E1 <- read.csv(
+  "../2_Raw_Data/Liu_2023_CP/Liu_2023_CP_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Participant.Public.ID,
+    Match = P_Orginal,
+    Label = Label,
+    Origin_Identity = P_Group,
+    Response = Response,
+    RT_ms = Reaction.Time,
+    ACC = Correct,
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Match == "JA" ~ "Matching",
+      Match == "NEIN" ~ "Nonmatching"
+    ),
+    English_Identity = case_when(
+      Origin_Identity == "User" ~ "Self",
+      Origin_Identity == "Other" ~ "Stranger"
+    ),
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    ACC = as.numeric(ACC)
+    )
+
+df_Subject_ID <- df_Ps1_E1 %>% # nolint
+  dplyr::group_by(
+    Subject
+  ) %>%
+  dplyr::summarise(
+    count = n()
+  ) %>%
+  dplyr::mutate(
+    Subject_ID = row_number()
+  ) %>%
+  dplyr::select(
+    Subject, Subject_ID
+  )
+
+df[[39]] <- df_Ps1_E1 %>%
+  dplyr::left_join(
+    df_Subject_ID,
+    by = "Subject"
+  ) %>%
+  dplyr::mutate(
+    Subject = Subject_ID
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Matching, Label, Response, Origin_Identity, English_Identity, Standarlized_Identity, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+rm(df_Subject_ID, df_Ps1_E1)
+
+names(df)[39] <- "Liu_2023_CP"
+summary(df[[39]])
+write.csv(x = df[[39]], file = "../1_Clean_Data/Liu_2023_CP/Liu_2023_CP_Exp1_Clean.csv")
+```
+
+# Orellana-Corrales_2021_EP
+## Experiment 1 (Identity = 2)
+"Self", "Stranger"    →   "Self","Stranger"
+```{r Paper n14 Experiment 1}
+df[[40]] <- read.csv(
+"../2_Raw_Data/Orellana-Corrales_2021_EP/Orellana-Corrales_2021_EP_Exp1_raw.csv"
+  ) %>%
+  dplyr::filter(
+    Running == "manipCheck",
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Age = Age,
+    Handedness = Handedness,
+    Gender = Sex,
+    Condition = Condition,
+    Matching = match,
+    Shape = shape,
+    Label = label,    
+    Origin_Identity = label,
+    Response = match03.RESP,
+    RT_ms = match03.RT,
+    ACC = match03.ACC,
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "match" ~ "Matching",
+      Matching == "nonmatch" ~ "Nonmatching"
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    English_Identity = case_when(
+      Origin_Identity == "Fremder" ~ "Stranger",
+      Origin_Identity == "Ich" ~ "Self",
+    ),
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Handedness, 
+    Shape, Label, Origin_Identity, English_Identity, Standarlized_Identity, Matching,  
+    Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching 
+  )
+
+names(df)[40] <- "Orellana-Corrales_2021_EP"
+summary(df[[40]])
+write.csv(x = df[[40]], file = "../1_Clean_Data/Orellana-Corrales_2021_EP/Orellana-Corrales_2021_EP_Exp1_Clean.csv")
+```
+
+# Orellana-Corrales_2021_EP
+## Experiment 2 (Identity = 2)
+"Self", "Stranger"    →   "Self","Stranger"
+```{r Paper n14 Experiment 2}
+df[[41]] <- read.csv(
+"../2_Raw_Data/Orellana-Corrales_2021_EP/Orellana-Corrales_2021_EP_Exp2_raw.csv"
+  ) %>%
+  dplyr::filter(
+    Running == "manipCheck",
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Age = Age,
+    Handedness = Handedness,
+    Gender = Sex,
+    Condition = Condition,
+    Matching = match,
+    Shape = shape,
+    Label = label,
+    Origin_Identity = label,
+    Response = match03.RESP,
+    RT_ms = match03.RT,
+    ACC = match03.ACC,
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "match" ~ "Matching",
+      Matching == "nonmatch" ~ "Nonmatching"
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    English_Identity = case_when(
+      Origin_Identity == "Fremder" ~ "Stranger",
+      Origin_Identity == "Ich" ~ "Self",
+    ),
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Handedness, 
+    Shape, Label, Origin_Identity, English_Identity, Standarlized_Identity, Matching, 
+    Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching,
+  )
+
+names(df)[41] <- "Orellana-Corrales_2021_Exp2"
+summary(df[[41]])
+write.csv(x = df[[41]], file = "../1_Clean_Data/Orellana-Corrales_2021_EP/Orellana-Corrales_2021_EP_Exp2_Clean.csv")
+```
+
+# Orellana-Corrales_2021_EP
+## Experiment 3 (Identity = 2)
+"Self", "Stranger"    →   "Self","Stranger"
+```{r Paper n14 Experiment 3}
+df[[42]] <- read.csv(
+"../2_Raw_Data/Orellana-Corrales_2021_EP/Orellana-Corrales_2021_EP_Exp3_raw.csv"
+  ) %>%
+  dplyr::filter(
+    Running == "manipCheck",
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Age = Age,
+    Handedness = Handedness,
+    Gender = Sex,
+    Condition = Condition,
+    Matching = match,
+    Shape = shape,
+    Label = label,
+    Origin_Identity = label,
+    Response = match03.RESP,
+    RT_ms = match03.RT,
+    ACC = match03.ACC,
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "match" ~ "Matching",
+      Matching == "nonmatch" ~ "Nonmatching"
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = case_when(
+      Origin_Identity == "Fremder" ~ "Stranger",
+      Origin_Identity == "Ich" ~ "Self",
+    ),
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Handedness, 
+    Shape, Label, Origin_Identity, English_Identity, Standarlized_Identity, Matching,  
+    Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching,
+  )
+
+names(df)[42] <- "Orellana-Corrales_2021_Exp3"
+summary(df[[42]])
+write.csv(x = df[[42]], file = "../1_Clean_Data/Orellana-Corrales_2021_EP/Orellana-Corrales_2021_EP_Exp3_Clean.csv")
+```
+
+# Amodeo_2024_CABN
+## Experiment 1 (Identity = 3)
+"Self","Friend","Stranger"    →   "Self","Close","Stranger"
+```{r Paper t28 Experiment 1}
+df[[43]] <- read.csv(
+"../2_Raw_Data/Amodeo_2024_CABN/Amodeo_2024_CABN_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Matching = Label,
+    Shape = Target,
+    Label = Label,
+    Origin_Identity = Shape,
+    Response = Target.RESP,
+    RT_ms = Target.RT,
+    ACC = Target.ACC,
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "Ikzelf" ~ "Self",
+      Matching == "Bekende" ~ "Friend",
+      Matching == "Vreemde" ~ "Stranger"
+    ),
+    Matching = case_when(
+      Matching == Origin_Identity ~ "Matching",
+      Matching != Origin_Identity ~ "Nonmatching"),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::select(
+    Subject,  
+    Shape, Label, Matching, Origin_Identity, English_Identity, Standarlized_Identity,
+    Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity
+  )
+
+names(df)[43] <- "Amodeo_2024_CABN"
+summary(df[[43]])
+write.csv(x = df[[43]], file = "../1_Clean_Data/Amodeo_2024_CABN/Amodeo_2024_CABN_Exp1_Clean.csv")
+```
+
+# Zhang_2023_NI
+## Experiment 1 (Identity = 2)
+"Self","Stranger"   →   "Self","Stranger"
+```{r Paper t10 Experiment 1}
+df[[44]] <- read.csv(
+"../2_Raw_Data/Zhang_2023_NI/Zhang_2023_NI_Exp1_raw.csv"
+  ) %>%
+  dplyr::filter(
+    Procedure.Block. == "ProSelf",
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Handedness = Handedness,
+    Age = Age,
+    Gender = Sex,
+    Shape = Stimulus,
+    Label = Label,
+    Origin_Identity = Shape,
+    Matching = Match,
+    Response = TargetS.RESP,
+    RT_ms = TargetS.RT,
+    ACC = TargetS.ACC,
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "Matched" ~ "Matching",
+      Matching == "Mismatched" ~ "Nonmatching"
+    ),
+    English_Identity = case_when(
+      Origin_Identity == "你" ~ "Self",
+      Origin_Identity == "生人" ~ "Stranger"
+    ),    
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Handedness,
+    Shape, Label, Matching, Origin_Identity, English_Identity, Standarlized_Identity,
+    Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity,
+  )
+
+names(df)[44] <- "Zhang_2023_NI"
+summary(df[[44]])
+write.csv(x = df[[44]], file = "../1_Clean_Data/Zhang_2023_NI/Zhang_2023_NI_Exp1_Clean.csv")
+```
+
+# Feldborg_2021_ERPH
+## Experiment 1 (Identity = 3)
+"Self","Friend","Stranger"    →   "Self","Close","Stranger"
+```{r Paper t13 Experiment 1}
+df[[45]] <- read.csv(
+"../2_Raw_Data/Feldborg_2021_ERPH/Feldborg_2021_ERPH_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = subject,
+    Age = SubAge,
+    Gender = SubGender,
+    Ethnicity = SubEthnicity,
+    Handedness = SubHand,
+    Group = group,
+    Matching = Con_match,
+    Shape = fill,
+    Label = Con_label,
+    Origin_Identity = Con_shape,
+    Response = response,
+    RT_ms = latency,
+    ACC = correct,
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "match" ~ "Matching",
+      Matching == "unmatch" ~ "Nonmatching"
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = case_when(
+      Origin_Identity == "self" ~ "Self",
+      Origin_Identity == "stranger" ~ "Stranger",
+      Origin_Identity == "friend" ~ "Friend",
+    ),
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Ethnicity, Handedness, Group,
+    Shape, Label, Matching, Origin_Identity, English_Identity, Standarlized_Identity,
+    Response, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching
+  )
+
+names(df)[45] <- "Feldborg_2021_ERPH"
+summary(df[[45]])
+write.csv(x = df[[45]], file = "../1_Clean_Data/Feldborg_2021_ERPH/Feldborg_2021_ERPH_Exp1_Clean.csv")
+```
+
+
+# Wang_2016_EPHPP
+## Experiment 1 (Identity = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"
+```{r  Experiment 1}
+df[[47]] <- read.csv(
+  "../2_Raw_Data/Wang_2016_EPHPP/Merge_Data_Used.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Age= Age,
+    Gender = Sex,
+    Handedness = Handedness,
+    Shape = Stimulus,
+    Label = Label,
+    Origin_Identity = Shape,
+    Matching = Match,
+    RT_ms = Target.RT,
+    ACC = Target.ACC,
+    Response = Target.RESP
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "Matched" ~ "Matching",
+      Matching == "Mismatched" ~ "Nonmatching"
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    RT_sec = as.numeric(RT_sec),
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Handedness,
+    Shape, Label, Origin_Identity, English_Identity, Standarlized_Identity, Matching, 
+    Response, RT_ms, RT_sec, ACC,
+  ) %>%
+  dplyr::arrange(
+    Subject, Shape, Label, Matching, 
+  )
+
+names(df)[47] <- "Wang_2016_EPHPP"
+summary(df[[47]])
+write.csv(x = df[[47]], file = "../1_Clean_Data/Wang_2016_EPHPP/Wang_2016_EPHPP_Exp1_Clean.csv")
+```
+
+# Sui_2014 (Unpublish)
+## Experiment 1 (Identtiy = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"
+```{r Paper s3 Experiment 1}
+df[[48]] <- read.csv(
+  "../2_Raw_Data/Sui_2014/Sui_2014_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = Subject,
+    Age = Age,
+    Gender = Sex,
+    Session = Session,
+    Group = Block,
+    Shape = SelfRelated,
+    Origin_Identity = SelfRelated,
+    Label = Question, 
+    RT_ms = RT,
+    ACC = ACC,
+  ) %>%
+  dplyr::mutate(
+    Label = case_when(
+      Label == "You" ~ "Self",
+      TRUE ~ Label),
+    Matching = case_when(
+      Shape == Label ~ "Matching",
+      Shape != Label ~ "Nonmatching"),
+    RT_sec = RT_ms / 1000,
+    Identity = Shape
+  ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    Session = as.factor(Session),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+  ) %>%
+  dplyr::select(
+    Subject, Age, Gender,  
+    Matching, Origin_Identity, English_Identity, Standarlized_Identity, Session, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity, English_Identity, Standarlized_Identity, Session
+  )
+
+names(df)[48] <- "Sui_2014"
+summary(df[[48]])
+write.csv(x = df[[48]], file = "../1_Clean_Data/Sui_2014/Sui_2014_Exp1_Clean.csv")
+```
+
+# Sui_2015 (Unpublish)
+## Experiment 1 (Identtiy = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"
+```{r Paper s4 Experiment 1}
+# 获取文件夹内所有满足条件的文件名
+file_list <- list.files(
+  path = "../2_Raw_Data/Sui_2015/Source/",
+  pattern = "^PractExperiment_1.*\\.mat$",
+  full.names = TRUE
+)
+
+# 创建一个空的列表来存储读取的.mat文件
+list_mat_e1 <- list()
+
+# 循环读取文件并存储到列表中
+for (file in file_list) {
+  mat_data <- R.matlab::readMat(file)
+  list_mat_e1[[basename(file)]] <- mat_data
+}
+
+rm(file, file_list)
+
+
+df[[49]] <- read.mat(
+  list = list_mat_e1
+  ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Shape == Label ~ "Matching",
+      Shape != Label ~ "Nonmatching"
+      ),
+    Origin_Identity = case_when(
+      Shape == 1 ~ "Self",
+      Shape == 2 ~ "Friend",
+      Shape == 3 ~ "Stranger"
+    ),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    RT_ms = RT,
+    RT_sec = RT / 1000,
+    ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    Session = as.factor(Session),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    Age = Age,
+    Handedness = Hand,
+    Gender = sex,
+  ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Handedness, Matching, Origin_Identity, English_Identity, Standarlized_Identity, Session, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::mutate(
+    RT_sec = round(RT_sec, 3),
+    RT_ms = round(RT_ms, 0)
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity, English_Identity, Standarlized_Identity, Session
+  )
+
+rm(list_mat_e1, mat_data)
+
+names(df)[49] <- "Sui_2015"
+summary(df[[49]])
+write.csv(x = df[[49]], file = "../1_Clean_Data/Sui_2015/Sui_2015_Exp1_Clean.csv")
+```
+
+# Sui_2015
+## Experiment 2 (Identtiy = 3)
+"Self", "Friend", "Stranger"    →   "Self","Close","Stranger"
+```{r Paper s4 Experiment 2}
+# 获取文件夹内所有满足条件的文件名
+file_list <- list.files(
+  path = "../2_Raw_Data/Sui_2015/Source/",
+  pattern = "^PractExperiment_2.*\\.mat$",
+  full.names = TRUE
+)
+
+# 创建一个空的列表来存储读取的.mat文件
+list_mat_e2 <- list()
+
+# 循环读取文件并存储到列表中
+for (file in file_list) {
+  mat_data <- R.matlab::readMat(file)
+  list_mat_e2[[basename(file)]] <- mat_data
+}
+
+rm(file, file_list)
+
+df[[50]] <- read.mat(list = list_mat_e2) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Shape == Label ~ "Matching",
+      Shape != Label ~ "Nonmatching"
+    ),
+    Origin_Identity = case_when(
+      Shape == 1 ~ "Self",
+      Shape == 2 ~ "Friend",
+      Shape == 3 ~ "Stranger"
+    ),
+    RT_ms = RT,
+    RT_sec = RT / 1000,
+    ) %>%
+  dplyr::mutate(
+    Subject = as.numeric(Subject),
+    Matching = factor(
+      Matching, levels = c("Matching", "Nonmatching")
+    ),
+    English_Identity = Origin_Identity,
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Friend" ~ "Close",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    Session = as.factor(Session),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    Age = Age,
+    Handedness = Hand,
+    Gender = sex,
+  ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Handedness, 
+    Matching, Origin_Identity, English_Identity, Standarlized_Identity, Session, RT_ms, RT_sec, ACC
+  ) %>%
+  dplyr::arrange(
+    Subject, Matching, Origin_Identity, English_Identity, Standarlized_Identity, Session
+  )
+
+rm(list_mat_e2, mat_data)
+
+names(df)[50] <- "Sui_2015"
+summary(df[[50]])
+write.csv(x = df[[50]], file = "../1_Clean_Data/Sui_2015/Sui_2015_Exp2_Clean.csv")
+```
+
+# Dalmaso_2024_CC
+## Experiment 1 (Identity = 2)
+"Self","Other" → "Self","Stranger"
+```{r Paper a2 Experiment 1}
+df[[51]] <- read.csv(
+  "../2_Raw_Data/Dalmaso_2024_CC/Dalmaso_2024_CC_Exp1_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = participant,
+    Age = age..years.,
+    Handedness = dominant.hand,
+    Gender = sex,
+    Label = etichetta,
+    Origin_Identity = id_self,
+    Matching = match,
+    Condition = condizione,
+    Race = etnia,
+    RT_ms = risposta.rt,
+    ACC = risposta.corr,
+    ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "si" ~ "Matching",
+      Matching == "no" ~ "Nomatching",
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = case_when(
+      Origin_Identity == "self" ~ "Self",
+      Origin_Identity == "other" ~ "Stranger",
+    ),
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    Race = case_when(
+      Race == "asiatico" ~ "Asian",
+      Race == "bianco" ~ "White"
+    ),
+    Condition = case_when(
+      Condition == "asiatico" ~ "Asian",
+      Condition == "bianco" ~ "White"
+    ),
+    ) %>%
+  dplyr::select(
+    Subject, Age, Gender, Handedness,
+    Label, Origin_Identity, English_Identity, Standarlized_Identity,
+    Matching, Condition, Race, RT_ms, RT_sec, ACC
+    ) %>%
+  dplyr::arrange(
+    Subject
+    )
+
+names(df)[51] <- "Dalmaso_2024_CC_Exp1"
+summary(df[[51]])
+write.csv(x = df[[51]], file = "../1_Clean_Data/Dalmaso_2024_CC/Dalmaso_2024_CC_Exp1_Clean.csv")
+```
+
+## Experiment 2 (Identity = 2)
+"Self","Other" → "Self","Stranger"
+```{r Paper a2 Experiment 2}
+df[[52]] <- read.csv(
+  "../2_Raw_Data/Dalmaso_2024_CC/Dalmaso_2024_CC_Exp2_raw.csv"
+  ) %>%
+  dplyr::select(
+    Subject = participant,
+    Origin_Identity = self_other,
+    Matching = match,
+    Condition = condition,
+    Race = race,
+    RT_ms = rt,
+    ACC = acc,
+    ) %>%
+  dplyr::mutate(
+    Matching = case_when(
+      Matching == "yes" ~ "Matching",
+      Matching == "no" ~ "Nomatching",
+    ),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = RT_ms / 1000,
+    ) %>%
+  dplyr::mutate(
+    Subjcet = as.numeric(Subject),
+    RT_ms = as.numeric(RT_ms),
+    RT_sec = as.numeric(RT_sec),
+    ACC = as.numeric(ACC),
+    English_Identity = case_when(
+      Origin_Identity == "self" ~ "Self",
+      Origin_Identity == "other" ~ "Stranger",
+    ),
+    Standarlized_Identity = case_when(
+      English_Identity == "Self" ~ "Self",
+      English_Identity == "Stranger" ~ "Stranger",
+    ),
+    Race = case_when(
+      Race == "asiatico" ~ "Asian",
+      Race == "bianco" ~ "White"
+    ),
+    Condition = case_when(
+      Condition == "asiatico" ~ "Asian",
+      Condition == "bianco" ~ "White"
+    ),
+    ) %>%
+  dplyr::select(
+    Subject,
+    Origin_Identity, English_Identity, Standarlized_Identity,
+    Matching, Condition, Race, RT_ms, RT_sec, ACC
+    ) %>%
+  dplyr::arrange(
+    Subject
+    )
+
+names(df)[52] <- "Dalmaso_2024_CC_Exp2"
+summary(df[[52]])
+write.csv(x = df[[52]], file = "../1_Clean_Data/Dalmaso_2024_CC/Dalmaso_2024_CC_Exp2_Clean.csv")
+```
+
+
+
+
+
+

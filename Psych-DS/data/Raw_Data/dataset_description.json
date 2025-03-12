@@ -1,0 +1,41 @@
+{
+     "@type": "https://schema.org/Dataset",
+     "name": {
+       "@value": "CZX-2020-NHB"
+     },
+     "description": {
+       "@value": "这是用来测试的话"
+     },
+     "variableMeasured": [
+       {
+         "@value": "Self"
+       },
+       {
+         "@value": "Matching"
+       }
+     ],
+     "author": [
+       {
+         "@value": "czx"
+       },
+       {
+         "@value": "sxr"
+       }
+     ],
+     "citation": {
+       "@value": null
+     },
+     "license": {
+       "@value": null
+     },
+     "funder": [
+       {
+         "@value": null
+       }
+     ],
+     "url": {},
+     "keywords": {
+       "@value": null
+     },
+     "identifier": {}
+   }
