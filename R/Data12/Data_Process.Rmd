@@ -1,0 +1,280 @@
+---
+title: "Data_Process"
+author: "czx"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+# 加载必要的包
+library(tidyverse)
+library(ggplot2)
+library(afex)  # 用于ANOVA分析
+
+# 读取数据
+data <- read.csv("Exp1.csv")
+
+# 数据检查，确保变量类型正确
+str(data)
+
+# 1. 前测同质性检验（检验实验组与对照组的差异）
+# 假设"实验类型"列是实验组和对照组，"A总分"是前测得分
+
+# 对照组与实验组在前测的差异性检验
+homogeneity_test <- aov(A总分 ~ 实验类型, data = data)
+summary(homogeneity_test)
+
+# 2. 重复测量方差分析（实验类型、时间以及它们的交互效应）
+# 创建一个长格式的数据框，包含所有维度的前测和后测得分
+data_long <- data %>%
+  gather(key = "维度_时间", value = "得分", A智慧和知识, B智慧和知识, A勇气, B勇气, A人性, B人性, A公正, B公正, A节制, B节制, A超越, B超越, A总分, B总分) %>%
+  separate(维度_时间, into = c("维度", "时间"), sep = "(?<=\\D)(?=\\d)")  # 分离维度和时间
+
+# 重复测量方差分析（实验类型、时间、交互效应）
+anova_result <- aov(得分 ~ 实验类型 * 时间 + Error(学号/(时间)), data = data_long)
+summary(anova_result)
+
+# 3. 简单效应分析
+# 进行实验组与对照组的简单效应分析，考虑其他控制变量（性别、生源地、家庭类型等）
+simple_effects <- aov(得分 ~ 实验类型 * 时间 + 性别 + 生源地 + 平均学分绩点 + 家庭类型 + 是否独生子女 + 是否有留守经历, data = data_long)
+summary(simple_effects)
+
+# 4. 生成折线图（展示前后测实验效果）
+# 通过ggplot绘制折线图，展示不同实验类型在前后测中的变化
+
+ggplot(data_long, aes(x = 时间, y = 得分, group = 实验类型, color = factor(实验类型))) +
+  geom_line() +
+  geom_point() +
+  labs(title = "实验组与对照组前后测变化", x = "时间", y = "得分") +
+  scale_color_manual(values = c("blue", "red")) +
+  theme_minimal()
+
+# 5. 对照组与实验组的方差分析（检验前后测差异）
+# 对实验组与对照组分别进行前后测差异检验
+
+# 实验组（假设实验组为“实验类型”==1）
+exp_group <- data %>% filter(实验类型 == 1)
+exp_group_anova <- aov(B总分 - A总分 ~ 性别 + 生源地 + 平均学分绩点 + 家庭类型 + 是否独生子女 + 是否有留守经历, data = exp_group)
+summary(exp_group_anova)
+
+# 对照组（假设对照组为“实验类型”==2）
+control_group <- data %>% filter(实验类型 == 2)
+control_group_anova <- aov(B总分 - A总分 ~ 性别 + 生源地 + 平均学分绩点 + 家庭类型 + 是否独生子女 + 是否有留守经历, data = control_group)
+summary(control_group_anova)
+
+```
+
+## 前测同质性检验
+```{r}
+# 加载必要的包
+library(tidyverse)
+library(ggplot2)
+library(afex)  # 用于ANOVA分析
+
+# 读取数据
+data <- read.csv("Exp1.csv")
+
+# 列出所有前测变量的列名（A维度）
+pre_columns <- c("A_wisdom_knowledge", "A_courage", "A_humanity", "A_justice", 
+                 "A_temperance", "A_transcendence", "A_total_score")
+
+# 循环进行前测同质性检验
+for (var in pre_columns) {
+  test_result <- t.test(data[[var]] ~ data$experiment_type)
+  
+  # 提取检验结果
+  t_value <- test_result$statistic
+  p_value <- test_result$p.value
+  mean_group1 <- mean(data[data$experiment_type == 1, var], na.rm = TRUE)
+  mean_group2 <- mean(data[data$experiment_type == 2, var], na.rm = TRUE)
+  conf_int <- test_result$conf.int
+  
+  # 输出APA格式结果
+  cat("\n\n", paste0("For ", var, ": "), "\n")
+  cat("t(", round(test_result$parameter, 2), ") = ", round(t_value, 3), 
+      ", p = ", round(p_value, 3), ", 95% CI [", round(conf_int[1], 3), ", ", 
+      round(conf_int[2], 3), "]\n")
+  cat("M (Experiment Group) = ", round(mean_group1, 2), ", M (Control Group) = ", round(mean_group2, 2), "\n")
+}
+   
+```
+
+## 主效应和交互效应分析
+```{r}
+# 加载必要的包
+library(ez)
+
+# 将数据转换为长格式，以便进行重复测量方差分析
+data_long <- reshape(data, 
+                     varying = c("A_wisdom_knowledge", "B_wisdom_knowledge", 
+                                 "A_courage", "B_courage", "A_humanity", "B_humanity", 
+                                 "A_justice", "B_justice", "A_temperance", "B_temperance", 
+                                 "A_transcendence", "B_transcendence", "A_total_score", "B_total_score"),
+                     v.names = c("wisdom_knowledge", "courage", "humanity", "justice", "temperance", 
+                                 "transcendence", "total_score"),
+                     timevar = "time", 
+                     times = c("A", "B"),
+                     direction = "long")
+
+# 进行重复测量方差分析（ANOVA），分析主效应和交互效应
+# 对每一个维度进行分析，例如：智慧和知识
+ezANOVA(data_long, dv = .(wisdom_knowledge), wid = .(student_id), 
+        within = .(time), between = .(experiment_type), detailed = TRUE)
+
+```
+
+
+```{r}
+# 加载必要的包
+library(tidyverse)
+library(ggplot2)
+library(afex)  # 用于ANOVA分析
+
+# 读取数据
+data <- read.csv("Exp1.csv")
+
+# 数据检查，确保变量类型正确
+str(data)
+# 确保 time 和 experiment_type 变量是因子
+data_long$time <- factor(data_long$time)
+data_long$experiment_type <- factor(data_long$experiment_type)
+
+# 检查 dimension_time 中的不同值
+table(data_long$dimension_time)
+
+# 如果分割有问题，可以手动处理
+# 如果需要，手动修改数据格式来确保分割正确
+
+# 重复测量方差分析（experiment_type、time、交互效应）
+anova_result <- aov(score ~ experiment_type * time + Error(student_id/(time)), data = data_long)
+summary(anova_result)
+
+
+# 1. 前测同质性检验（检验实验组与对照组的差异）
+# 假设"experiment_type"列是实验组和对照组，"A_total_score"是前测得分
+
+# 对照组与实验组在前测的差异性检验
+homogeneity_test <- aov(A_total_score ~ experiment_type, data = data)
+summary(homogeneity_test)
+
+# 2. 重复测量方差分析（实验类型、时间以及它们的交互效应）
+# 创建一个长格式的数据框，包含所有维度的前测和后测得分
+data_long <- data %>%
+  gather(key = "dimension_time", value = "score", A_wisdom_knowledge, B_wisdom_knowledge, A_courage, B_courage, 
+         A_humanity, B_humanity, A_justice, B_justice, A_temperance, B_temperance, A_transcendence, B_transcendence, 
+         A_total_score, B_total_score) %>%
+  separate(dimension_time, into = c("dimension", "time"), sep = "(?<=\\D)(?=\\d)")  # 分离维度和时间
+
+# 重复测量方差分析（experiment_type、time、交互效应）
+anova_result <- aov(score ~ experiment_type * time + Error(student_id/(time)), data = data_long)
+summary(anova_result)
+
+# 3. 简单效应分析
+# 进行experiment_type与time的简单效应分析，考虑其他控制变量（gender、origin、GPA、family_type等）
+simple_effects <- aov(score ~ experiment_type * time + gender + origin + GPA + family_type + only_child + left_behind, data = data_long)
+summary(simple_effects)
+
+# 4. 生成折线图（展示前后测实验效果）
+# 通过ggplot绘制折线图，展示不同experiment_type在前后测中的变化
+
+ggplot(data_long, aes(x = time, y = score, group = experiment_type, color = factor(experiment_type))) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Changes in Experimental and Control Groups Before and After", x = "Time", y = "Score") +
+  scale_color_manual(values = c("blue", "red")) +
+  theme_minimal()
+
+# 5. 对照组与实验组的方差分析（检验前后测差异）
+# 对experiment_type为1的实验组与experiment_type为2的对照组分别进行前后测差异检验
+
+# 实验组（假设experiment_type为1）
+exp_group <- data %>% filter(experiment_type == 1)
+exp_group_anova <- aov(B_total_score - A_total_score ~ gender + origin + GPA + family_type + only_child + left_behind, data = exp_group)
+summary(exp_group_anova)
+
+# 对照组（假设experiment_type为2）
+control_group <- data %>% filter(experiment_type == 2)
+control_group_anova <- aov(B_total_score - A_total_score ~ gender + origin + GPA + family_type + only_child + left_behind, data = control_group)
+summary(control_group_anova)
+
+```
+
+
+
+
+```{r}
+library(tidyverse)
+library(car)
+library(afex)
+library(lme4)
+```
+
+```{r}
+# 读取数据
+data <- read.csv("Exp1.csv")
+
+# 查看数据结构
+str(data)
+
+```
+
+```{r}
+# 数据转换为长格式
+data_long <- data %>%
+  pivot_longer(cols = starts_with("A_") | starts_with("B_"), 
+               names_to = c("dimension", "time"), 
+               names_pattern = "([A-B])_(.*)", 
+               values_to = "score")
+
+# 检查转换后的数据
+head(data_long)
+
+```
+
+## 前测同质性检验
+```{r}
+# 进行前测同质性检验，使用 tryCatch 来处理潜在的错误
+before_test <- before_measure %>%
+  group_by(dimension) %>%
+  summarise(
+    t_test_result = list(
+      tryCatch(
+        t.test(score ~ experiment_type),
+        error = function(e) NA  # 如果 t.test 出现错误，返回 NA
+      )
+    ))
+
+# 提取 t 检验结果的 p 值
+before_test$p_value <- sapply(before_test$t_test_result, function(x) if(!is.na(x)) x$p.value else NA)
+
+# 查看检验结果
+print(before_test)
+
+
+```
+
+## 重复测量方差分析
+```{r}
+# 进行重复测量方差分析
+aov_results <- aov_ez("student_id", "score", data_long, 
+                      within = c("time"), between = c("experiment_type"), 
+                      by = "dimension", 
+                      factorize = FALSE)
+
+# 查看方差分析结果
+summary(aov_results)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
