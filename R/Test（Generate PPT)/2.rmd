@@ -1,0 +1,72 @@
+---
+marp: true
+title: 'Listen to Yourself!'
+theme: default
+class: 
+  - lead          <!-- 标题页居中布局 -->
+  - invert        <!-- 暗色模式 -->
+paginate: true    <!-- 显示页码 -->
+header: 'British Journal of Psychology, 2025'
+footer: 'Data: OSF.io/hr96d | 资助号: RIG009864'
+---
+
+<!-- 标题页 -->
+![bg left:40%](https://via.placeholder.com/600x800?text=Acoustic+Analysis)
+# **Listen to Yourself!**  
+## Prioritization of Self-Associated and Own Voice Cues  
+**Neil W. Kirk & Sheila J. Cunningham**  
+
+---
+
+<!-- 目录页自动生成 -->
+## 目录  
+- 研究背景  
+- 研究问题  
+- 实验设计  
+- 实验结果  
+- 讨论与结论  
+
+---
+
+<!-- 分栏布局模板 -->
+<style>
+.columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+}
+.spe-box { 
+  border-left: 5px solid #4CAF50;
+  padding-left: 1rem;
+}
+</style>
+
+## 1. 研究背景  
+<div class="columns">
+
+<!-- 左栏 -->
+<div class="spe-box">
+
+### **自我优先效应（SPE）**  
+- 名字/面孔优先处理  
+- 跨文化一致性验证  
+</div>
+
+<!-- 右栏 -->
+<div>
+
+### **声音独特性**  
+- 身份核心标识（Payne et al., 2021）  
+- 现有研究缺口  
+  ```vega-lite
+  {
+    "mark": "bar",
+    "data": {"values": [
+      {"field": "声音研究", "count": 12},
+      {"field": "面孔研究", "count": 87}
+    ]},
+    "encoding": {
+      "x": {"field": "field", "title": ""},
+      "y": {"field": "count", "title": "文献数量"}
+    }
+  }
