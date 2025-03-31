@@ -11,11 +11,7 @@ date: "2025-03-27"
 
 ## 研究背景
 
-- 研究问题：长期关联的物理自我声音线索与临时分配的自我线索，哪个更优先？
-- 先前研究表明：自我优先效应具有动态性，并受顶层注意目标调节（Golubickis & Macrae, 2023; Humphreys & Siu, 2016）。
-- 例如，Cunningham等（2022）使用点探测任务发现，当参与者被指示关注特定目标图像时，自我偏向效应会被削弱，但如果目标图像是自己的脸，则注意力偏向会增强。
-- 这表明自我偏向可以是累加的：临时目标结合自我相关线索能引发最强注意效应。
-- 研究推测：当参与者的自身声音被分配为“自我”时，应该会触发最快、最准确的反应。
+
 
 ---
 
@@ -23,9 +19,7 @@ date: "2025-03-27"
 
 ### 设计
 
-- **混合设计**：
-  - **被试间变量**：自身声音归属（自我、朋友、陌生人）。
-  - **被试内变量**：声音身份（自我、朋友、陌生人） × 试次类型（匹配、不匹配）。
+
 
 ### 参与者
 
@@ -101,3 +95,119 @@ date: "2025-03-27"
 - **D'分析**见附录S1。
 - **实验材料**可在Gorilla平台获取（链接见原文）。
 
+---
+
+
+
+
+# 实验二总结
+
+## 研究背景
+- 本研究探讨了自我声音指派（Own-voice assignment）如何影响匹配（Match）和不匹配（Mismatch）任务中的反应时（RT）和准确率（Accuracy）。
+- 研究重点是参与者对自我、朋友和陌生人声音的反应表现。
+
+---
+
+## 实验分析
+### 数据处理与统计分析
+- 使用线性混合效应模型分析RT和Accuracy数据。
+- 主要自变量：Own-voice assignment（Self, Friend, Stranger）和Voice identity（Self, Friend, Stranger）。
+- 交互效应分析：Own-voice assignment × Voice identity。
+- 统计显著性水平调整：Bonferroni校正。
+
+---
+
+## 反应时（RT）分析
+### 主要效应
+- Mismatch 任务中，Own-voice assignment 具有显著主效应（χ²(2)=6.93, p=0.031, η²=0.07）。
+- Match 任务中，Voice identity 具有显著主效应（χ²(2)=26.32, p<.001）。
+
+### 交互效应
+- Mismatch 任务：Own-voice assignment × Voice identity 交互显著（χ²(4)=323.75, p<.001, η²=0.04）。
+- Match 任务：Own-voice assignment × Voice identity 交互显著（χ²(4)=177.07, p<.001）。
+
+### 结论
+- 无论Own-voice assignment如何，参与者总是更快地识别出自己的声音，而不是朋友或陌生人的声音。
+- 这种趋势在Mismatch任务中表现尤为明显。
+
+---
+
+## 准确率（Accuracy）分析
+### 主要效应
+- Mismatch 任务中，Voice identity 具有显著主效应（χ²(2)=13.03, p=.001）。
+- Match 任务中，Voice identity 具有显著主效应（χ²(2)=26.32, p<.001）。
+
+### 交互效应
+- Mismatch 任务：Own-voice assignment × Voice identity 交互显著（χ²(4)=303.39, p<.001）。
+- Match 任务：Own-voice assignment × Voice identity 交互显著（χ²(4)=177.07, p<.001）。
+
+### 结论
+- 参与者在判断与自身身份匹配的声音时，比判断朋友或陌生人声音时更准确。
+- 无论任务类型如何，自我声音指派都增强了自我声音的识别优势。
+
+---
+
+## 研究总结
+- 结果表明，参与者在RT和Accuracy方面均表现出对自身声音的优先加工效应。
+- 这一效应在Mismatch任务中更为明显。
+- 研究支持了声音自我归因的特殊性，并与先前视觉线索的研究结果形成对比。
+---
+---
+
+---
+title: "实验二总结"
+author: "你的名字"
+date: "2025-03-31"
+---
+---
+# 实验二总结
+
+## 研究背景
+- 本研究探讨了自我声音指派（Own-voice assignment）如何影响匹配（Match）和不匹配（Mismatch）任务中的反应时（RT）和准确率（Accuracy）。
+- 研究重点是参与者对自我、朋友和陌生人声音的反应表现。
+
+---
+
+## 实验分析
+### 数据处理与统计分析
+- 使用线性混合效应模型分析RT和Accuracy数据。
+- 主要自变量：Own-voice assignment（Self, Friend, Stranger）和Voice identity（Self, Friend, Stranger）。
+- 交互效应分析：Own-voice assignment × Voice identity。
+- 统计显著性水平调整：Bonferroni校正。
+
+---
+
+## 反应时（RT）分析
+### 主要效应
+- Mismatch 任务中，Own-voice assignment 具有显著主效应（χ²(2)=6.93, p=0.031, η²=0.07）。
+- Match 任务中，Voice identity 具有显著主效应（χ²(2)=26.32, p<.001）。
+
+### 交互效应
+- Mismatch 任务：Own-voice assignment × Voice identity 交互显著（χ²(4)=323.75, p<.001, η²=0.04）。
+- Match 任务：Own-voice assignment × Voice identity 交互显著（χ²(4)=177.07, p<.001）。
+
+### 结论
+- 无论Own-voice assignment如何，参与者总是更快地识别出自己的声音，而不是朋友或陌生人的声音。
+- 这种趋势在Mismatch任务中表现尤为明显。
+
+---
+
+## 准确率（Accuracy）分析
+### 主要效应
+- Mismatch 任务中，Voice identity 具有显著主效应（χ²(2)=13.03, p=.001）。
+- Match 任务中，Voice identity 具有显著主效应（χ²(2)=26.32, p<.001）。
+
+### 交互效应
+- Mismatch 任务：Own-voice assignment × Voice identity 交互显著（χ²(4)=303.39, p<.001）。
+- Match 任务：Own-voice assignment × Voice identity 交互显著（χ²(4)=177.07, p<.001）。
+
+### 结论
+- 参与者在判断与自身身份匹配的声音时，比判断朋友或陌生人声音时更准确。
+- 无论任务类型如何，自我声音指派都增强了自我声音的识别优势。
+
+---
+
+## 研究总结
+- 结果表明，参与者在RT和Accuracy方面均表现出对自身声音的优先加工效应。
+- 这一效应在Mismatch任务中更为明显。
+- 研究支持了声音自我归因的特殊性，并与先前视觉线索的研究结果形成对比。

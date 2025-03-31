@@ -138,3 +138,65 @@ date: "2025"
 - Kirk, N. (2023). Dialectal variation and the generalizability of voice identity effects. *Psychonomic Bulletin & Review, 30*(1), 45-60.
 - Woods, K. J., Siegel, M. H., Traer, J., & McDermott, J. H. (2017). Headphone screening for online auditory experiments. *Attention, Perception, & Psychophysics, 79*(7), 2064-2072.
 
+---
+### **实验分析**
+- **数据处理**：
+  - 使用 **RStudio** 进行数据处理和可视化。
+  - 主要R包：
+    - `kableExtra`（表格展示）； `tidyverse`（数据整理）； `ggplot2` 和 `RColorBrewer`（数据可视化）
+- **统计分析**：
+  - **线性混合效应模型（LMM）**
+  - 主要R包：
+    - `lme4`（模型拟合）； `broom.mixed`（结果整理）； `afex`（统计分析）
+  - **效应量计算**：
+    - 使用 `effectsize` 计算Satterthwaite方法下的效应量。
+    - 事后检验：`emmeans`（均值比较），`effsize`（Cohen’s D）。
+
+---
+
+### **反应时（RT）分析**
+- **主要效应**：
+  - 试次类型（Trial Type）：匹配（MATCH）快于不匹配（MISMATCH）。
+  - 语音身份（Voice Identity）：
+    - **自我（Self）** 语音的反应快于 **朋友（Friend）** 和 **陌生人（Stranger）**。
+    - 朋友和陌生人之间无显著差异。
+- **交互效应**：
+  - 语音身份 × 试次类型 交互效应显著。
+  - **匹配试次**：自我语音快于朋友和陌生人。
+  - **不匹配试次**：语音身份间无显著差异。
+- **结论**：SPE 在匹配试次中更明显，与视觉领域研究结果一致。
+
+---
+
+### **准确率（Accuracy）分析**
+- **主要效应**：
+  - 试次类型：匹配试次的准确率高于不匹配试次。
+  - 语音身份：
+    - 自我语音准确率 **高于** 朋友和陌生人。
+    - 朋友 vs. 陌生人无显著差异。
+- **交互效应**：
+  - **未达到显著水平**，说明SPE在准确率上的作用不依赖试次类型。
+- **结论**：
+  - 结果与Payne et al. (2021) 一致，**SPE在语音匹配任务中存在**。
+  - 匹配试次的SPE效应比不匹配试次更显著。
+
+---
+
+## 研究结论
+- 语音匹配任务中存在**稳健的自我优先效应（SPE）**。
+- SPE 在 **匹配试次（Match Trials）** 中表现更明显。
+- 结果**成功复现** Payne et al. (2021) 的研究。
+- **未来方向**：
+  - 探索 **自我语音 vs. 外部自我指派语音** 的区别。
+  - 结合EEG/fMRI研究神经机制。
+
+---
+
+## 参考文献
+- Payne et al. (2021). Self-prioritization effect in auditory matching tasks. *Journal of Experimental Psychology*.
+- Sui et al. (2012). Self-prioritization in perceptual matching. *Journal of Cognitive Neuroscience*.
+
+---
+
+
+
