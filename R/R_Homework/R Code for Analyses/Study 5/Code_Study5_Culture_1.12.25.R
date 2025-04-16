@@ -35,7 +35,7 @@ library(effectsize)
 library(pwr)
 
 # Import Data ####
-data_full <- read.csv("Study5_9.11.24.csv", header=TRUE, sep=",") 
+data_full <- read.csv("../Data/Study 5/Study5_9.11.24.csv", header=TRUE, sep=",") 
 nrow(data_full) # 1260 before exclusions, 
 data <- data_full[data_full$exclude == 0,]
 nrow(data) # 1215 after exclusions

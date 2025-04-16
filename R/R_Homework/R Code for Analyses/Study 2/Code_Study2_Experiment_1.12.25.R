@@ -28,7 +28,7 @@ data$condition <- factor(data$condition, levels = c("AloneBenefitsCondition", "C
 model <- lm(beliefsMean ~ condition, data)
 summary(model)
 confint(model)
-leveneTest(beliefsMean ~ condition, data = data)
+leveneTest(beliefsMean ~ condition, data = data)  # 找不到这个功能could not find function "leveneTest"
 
 ## Plot ####
 # First, reorder conditions for graphing purposes

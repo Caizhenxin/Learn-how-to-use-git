@@ -29,7 +29,7 @@ library(RColorBrewer)
 library(psy)
 library(QuantPsyc)
 library(afex)
-library(EMAtools)
+library(EMAtools)  #不存在叫‘EMAtools’这个名称的程序包
 set_theme(base = theme_classic(), #To remove the background color and the grids
           theme.font = 'sans',   #To change the font type
           axis.title.size = 1.3,  #To change axis title size
@@ -37,7 +37,7 @@ set_theme(base = theme_classic(), #To remove the background color and the grids
           axis.textsize.y = 1) 
 
 # Import & Center Data ####
-esm_full <- read.csv("Study3_ESM_Deid_8.26.24.csv", header=TRUE, sep=",")
+esm_full <- read.csv("../Data/Study 3/Study3_ESM_Deid_8.26.24.csv", header=TRUE, sep=",")
 View(esm_full)
 
 # Main MS: Main Beliefs Model ####
@@ -66,7 +66,7 @@ confint(model.beliefs.NegAffectChange, method = "Wald")
 
 # Simple Slopes Analysis
 sim_slopes(model.beliefs.NegAffectChange, pred = C_time_alone, modx = C_beliefs_total)
-# Model Estimates: Extracted for plotting purposes
+# Model Estimates: Extracted for plotting purposes  这一行也报错
 emm_result_NegAffect <- emmeans(model.beliefs.NegAffectChange, 
                       ~ beliefs_total * time_alone, 
                       at=list(beliefs_total = c(SD1_above, SD1_below)), 
@@ -80,7 +80,7 @@ summary(model.beliefs.BoredChange)
 confint(model.beliefs.BoredChange, method = "Wald")
 # Simple Slopes Analysis
 sim_slopes(model.beliefs.BoredChange, pred = C_time_alone, modx = C_beliefs_total)
-# Model Estimates: Extracted for plotting purposes
+# Model Estimates: Extracted for plotting purposes  这一行也报错
 emm_result_Bored <- emmeans(model.beliefs.BoredChange, 
                             ~ beliefs_total * time_alone, 
                             at=list(beliefs_total = c(SD1_above, SD1_below)),
@@ -94,7 +94,7 @@ summary(model.beliefs.StressChange)
 confint(model.beliefs.StressChange, method = "Wald")
 # Simple Slopes Analysis
 sim_slopes(model.beliefs.StressChange, pred = C_time_alone, modx = C_beliefs_total)
-# Model Estimates: Extracted for plotting purposes
+# Model Estimates: Extracted for plotting purposes 这一行也报错
 emm_result_Stress <- emmeans(model.beliefs.StressChange, 
                              ~ beliefs_total * time_alone, 
                              at=list(beliefs_total = c(SD1_above, SD1_below)),
@@ -108,7 +108,7 @@ summary(model.beliefs.PosAffect.change)
 confint(model.beliefs.PosAffect.change, method = "Wald")
 # Simple Slopes Analysis
 sim_slopes(model.beliefs.PosAffect.change, pred = C_time_alone, modx = C_beliefs_total)
-# Model Estimates: Extracted for plotting purposes
+# Model Estimates: Extracted for plotting purposes 这一行也报错
 emm_result_PosAffect <- emmeans(model.beliefs.PosAffect.change, 
                                 ~ beliefs_total * time_alone, 
                                 at=list(beliefs_total = c(SD1_above, SD1_below)), 
@@ -122,7 +122,7 @@ summary(model.beliefs.ContentChange)
 confint(model.beliefs.ContentChange, method = "Wald")
 # Simple Slopes Analysis
 sim_slopes(model.beliefs.ContentChange, pred = C_time_alone, modx = C_beliefs_total)
-# Model Estimates: Extracted for plotting purposes
+# Model Estimates: Extracted for plotting purposes 这一行也报错
 emm_result_Content <- emmeans(model.beliefs.ContentChange, 
                       ~ beliefs_total * time_alone, 
                       at=list(beliefs_total = c(SD1_above, SD1_below)), 
@@ -136,7 +136,7 @@ summary(model.beliefs.GratefulChange)
 confint(model.beliefs.GratefulChange, method = "Wald")
 # Simple Slopes Analysis
 sim_slopes(model.beliefs.GratefulChange, pred = C_time_alone, modx = C_beliefs_total)
-# Model Estimates: Extracted for plotting purposes
+# Model Estimates: Extracted for plotting purposes 这一行也报错
 emm_result_Grateful <- emmeans(model.beliefs.GratefulChange, 
                       ~ beliefs_total * time_alone, 
                       at=list(beliefs_total = c(SD1_above, SD1_below)), 
@@ -196,7 +196,7 @@ mean(subset_avgtimealone_high$beliefs_total, na.rm=TRUE) # Mean = 4.76
 sd(subset_avgtimealone_high$beliefs_total, na.rm=TRUE) # SD = 1.26
 SD1_above_SI <- mean(subset_avgtimealone_high$beliefs_total, na.rm=TRUE) + sd(subset_avgtimealone_high$beliefs_total, na.rm=TRUE)
 SD1_below_SI <- mean(subset_avgtimealone_high$beliefs_total, na.rm=TRUE) - sd(subset_avgtimealone_high$beliefs_total, na.rm=TRUE)
-# Extract estimated means for plotting
+# Extract estimated means for plotting 这一行也报错
 emm_result_hightimealone <- emmeans(model.high.time.alone, 
                       ~ beliefs_total * time_alone, 
                       at=list(beliefs_total = c(SD1_below_SI, SD1_above_SI)), 
@@ -335,13 +335,14 @@ esm_full$C_extra_total <- esm_full$extra_total - grand_mean_extra
 # Create Plot: Loneliness (Main MS) #####
 # Run uncentered model
 model.beliefs.uncentered <- lmer(lonely_change ~ time_alone * beliefs_total + lonely_Tminus1 + (time_alone | prolific_id), data = esm_full, REML = FALSE)
+# 这一行也报错
 emm_result <- emmeans(model.beliefs.uncentered, 
                       ~ beliefs_total * time_alone, 
                       at=list(beliefs_total = c(SD1_above, SD1_below)), 
                       cov.reduce = FALSE)
 emm_result #shows the model predicted values at each level of time_alone and at 1 SD above/below mean of beliefs (uncentered) 
 
-# Step 1: Generate marginal means using emmeans
+# Step 1: Generate marginal means using emmeans 这一行也报错
 emm_result <- emmeans(
   model.beliefs.uncentered, 
   ~ time_alone * beliefs_total, 
@@ -437,7 +438,7 @@ model.beliefs.uncentered <- lmer(content_change ~ time_alone * beliefs_total + c
 # Gratitude
 model.beliefs.uncentered <- lmer(gratitude_change ~ time_alone * beliefs_total + grateful_Tminus1 + (time_alone | prolific_id), data = esm_full, REML = FALSE)
 
-# Run code below to plot (need to run desired model above first)
+# Run code below to plot (need to run desired model above first) 这一行也报错
 emm_result <- emmeans(model.beliefs.uncentered, 
                       ~ beliefs_total * time_alone, 
                       at = list(

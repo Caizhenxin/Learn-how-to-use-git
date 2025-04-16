@@ -35,7 +35,7 @@ library(effectsize)
 library(pwr)
 
 ### Import Data ####
-mega <- read.csv("Study4_Data_9.11.24.csv", header=TRUE, sep=",") # The "sample" column indicates which sample it is: 4=US Sample 1; 5=Japan Sample 1; 6=US Sample 2; 7=Japan Sample 2
+mega <- read.csv("../Data/Study 4/Study4_Data_9.11.24.csv", header=TRUE, sep=",") # The "sample" column indicates which sample it is: 4=US Sample 1; 5=Japan Sample 1; 6=US Sample 2; 7=Japan Sample 2
 table(mega$sample) # Pre-exclusions
 mega <- mega[mega$exclude ==! 1,] 
 table(mega$sample) # Number of participants per sample (after exclusions)
