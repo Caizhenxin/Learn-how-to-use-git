@@ -83,16 +83,20 @@ chi_square_result_NegNeu
 data <- data.frame(
   category = c("Positive", "Negative", "Both Neg & Pos", "Neutral"),
   value = c(8, 85, 7, 44))
+
 colors <- c("Positive" = "steelblue2",
             "Negative" = "#B20000", 
             "Both Neg & Pos" = "grey27", 
             "Neutral" = "lightgray")
+
 data$category <- factor(data$category, levels = c("Neutral", "Both Neg & Pos", "Negative", "Positive"))
+
 ggplot(data, aes(x = "", y = value, fill = colors)) +
   geom_bar(width = 1, stat = "identity") +
   coord_polar("y", start = 0) +
   theme_void() +
   scale_fill_identity() #Labels to pie chart added in Powerpoint
+
 
 data$category <- factor(data$category, levels = c("Neither", "Both Risks & Benefits", "Only Risks", "Only Benefits"))
 
