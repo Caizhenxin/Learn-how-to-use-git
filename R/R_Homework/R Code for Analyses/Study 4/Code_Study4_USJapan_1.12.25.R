@@ -639,3 +639,4 @@ SensitivityResult_USonly_80 <- pwr.f2.test(u=2, v=820-2-1, sig.level=0.05, power
 
 # Japan Only (Samples 1 and 2, N = 766)
 SensitivityResult_Japanonly_80 <- pwr.f2.test(u=2, v=766-2-1, sig.level=0.05, power=0.80)
+

@@ -13,6 +13,7 @@ library(multcomp)
 library(contrast)
 library(jtools)
 library(lavaan)
+library(car) ## 原代码没有
 
 ## Import Data ####
 data_before_exclusions <- read.csv("../Data/Study 2/Study2_Final_WithCodes_12.12.23.csv") 

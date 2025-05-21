@@ -305,7 +305,7 @@ psych::alpha(australia_lonely)
 poland_lonely <- poland[, c("Lonely_1", "Lonely_2", "Lonely_3", "Lonely_4", "Lonely_5", "Lonely_6", "Lonely_7", "Lonely_8")]
 psych::alpha(poland_lonely)
 
-# Country Selection using GFS Data: K-Means Clustering Analyses ####
+# Country Selection using GFS Data: K-Means Clustering Analyses #### ### Unavailable
 data <- read.csv("ORIGINAL_gfs_all_countries_wave1.csv") 
 data$LONELY <- 10 - data$LONELY #Reverse score so 10 is extremely lonely
 head(data)
