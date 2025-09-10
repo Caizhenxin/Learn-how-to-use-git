@@ -194,7 +194,7 @@ convert_to_percentage <- function(counts) {
 }
 ## Apply the function to the dataset
 full_forboot_percent <- convert_to_percentage(full_forboot_count)
-View(full_forboot_percent)
+#View(full_forboot_percent)
 ## Bootstrap to get SEs
 bootstrap_function <- function(full_forboot_count, indices) {
   boot_sample <- full_forboot_count[indices, ]
